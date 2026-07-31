@@ -11,14 +11,18 @@ MAD Store 是面向 MAD / AMV 创作者与独立开发者的开源项目导航�
 - 介绍、项目、提交三个公开页面
 - 按关键词、分类、系统和标签多层筛选项目
 - 每个项目拥有独立的可编辑 slug、SEO 元信息和详情页
-- 在独立详情页渲染 GitHub README，并正确解析仓库内的相对链接与图片
+- 在独立详情页渲染 GitHub README，并正确解析仓库内的相对链接
+- GitHub 图片通过带域名白名单、体积限制和缓存策略的本站代理加载
 - 用户提交公开 GitHub 仓库及作者联系方式
-- 管理员修改项目 slug、名称、描述、仓库地址、协议、系统、标签和分类
+- 常见开源协议提供用途说明，也可从 GitHub 自动识别
+- 管理员修改项目 slug、名称、描述、仓库地址、直链下载、协议、系统、标签和分类
+- 每个项目可添加版本号、文件大小、文档地址等自定义展示字段
 - 多管理员账号登录
 - 项目发布、拒绝与重新编辑
 - 管理员维护分类和可选标签
 - MongoDB Atlas 持久化
-- SMTP 新提交提醒，支持多个收件人
+- SMTP 同时通知管理员和联系人，覆盖已提交、已收录与被拒绝状态
+- 拒绝项目时必须填写拒绝理由，并随状态邮件发送
 - DeepSeek 辅助整理初审建议
 - sitemap、robots、canonical、JSON-LD 和页面级 metadata
 - EdgeOne Pages 自动部署与 Cloud Functions 支持
@@ -33,6 +37,7 @@ MAD Store 是面向 MAD / AMV 创作者与独立开发者的开源项目导航�
 | `/submit` | 项目提交表单 |
 | `/admin` | 管理员审核工作台，不参与搜索引擎收录 |
 | `/api/submit` | 接收项目提交 |
+| `/api/github-image` | 受限代理并缓存 GitHub README 图片 |
 | `/api/admin/login` | 管理员登录 |
 | `/api/admin/logout` | 管理员退出 |
 | `/api/admin/projects` | 获取全部待审与已发布项目 |
@@ -168,7 +173,14 @@ SMTP_FROM_NAME=MAD Store
 ADMIN_EMAILS=admin-a@example.com,admin-b@example.com
 ```
 
-`ADMIN_EMAILS` 支持使用英文逗号分隔多个收件人。SMTP 未配置时不会阻断项目提交。飞书公共邮箱的 `SMTP_PASS` 是公共邮箱详情页显示的 IMAP/SMTP 密码，不是飞书账号登录密码。
+`ADMIN_EMAILS` 支持使用英文逗号分隔多个管理员收件人。SMTP 同时用于：
+
+- 新项目提交后提醒管理员
+- 告知联系人“已提交，等待审核”
+- 项目发布后告知联系人“已收录”
+- 项目拒绝后发送管理员填写的拒绝理由
+
+SMTP 未配置时不会阻断项目提交或审核操作。飞书公共邮箱的 `SMTP_PASS` 是公共邮箱详情页显示的 IMAP/SMTP 密码，不是飞书账号登录密码。
 
 EdgeOne 环境变量编辑器不接受 `MAD Store <store@madproducer.com>` 这种带空格和尖括号的值，因此发件地址与显示名称必须分别填写到 `SMTP_FROM` 和 `SMTP_FROM_NAME`。
 
@@ -252,7 +264,10 @@ EdgeOne Pages Functions 当前没有可直接填写到 Atlas 的固定出口 IP 
 | `readme` | 提交时读取的 README |
 | `submitterName` | 联系人 |
 | `submitterEmail` | 联系邮箱，仅后台可见 |
-| `authorQQ` | 作者 QQ，仅后台可见 |
+| `contactQQ` | 联系人 QQ，仅后台可见；读取旧数据时兼容 `authorQQ` |
+| `downloadUrl` | 管理员添加的 HTTPS 直链下载地址 |
+| `customFields` | 管理员添加的自定义展示字段，可选附带 HTTPS 链接 |
+| `rejectionReason` | 拒绝项目时填写并发送给联系人的原因 |
 | `status` | `pending`、`published` 或 `rejected` |
 | `aiReview` | 可选的 DeepSeek 初审建议 |
 
@@ -302,10 +317,11 @@ EdgeOne Pages Functions 当前没有可直接填写到 Atlas 的固定出口 IP 
 2. 服务端校验 GitHub 地址并读取公开仓库信息与 README。
 3. 如果配置了 DeepSeek，则生成后台可见的整理建议。
 4. 项目以 `pending` 状态写入 MongoDB。
-5. SMTP 向一个或多个管理员发送提醒。
+5. SMTP 向管理员发送提醒，并向联系人发送“已提交”回执。
 6. 管理员登录 `/admin`，核对并修改信息。
-7. 管理员选择分类，随后发布或拒绝项目。
-8. 只有 `published` 状态的项目会出现在项目页。
+7. 管理员选择分类，随后发布或填写拒绝理由并拒绝项目。
+8. 状态变化后，联系人会收到“已收录”或包含拒绝理由的邮件。
+9. 只有 `published` 状态的项目会出现在项目页。
 
 ## 安全设计
 
@@ -315,9 +331,10 @@ EdgeOne Pages Functions 当前没有可直接填写到 Atlas 的固定出口 IP 
 - 登录与提交接口带基础限流
 - 管理端写操作校验同源请求
 - README 使用 React Markdown 渲染，不执行仓库中的 HTML
-- README 只加载 HTTPS 图片；仓库内相对图片会转为 GitHub 原始文件外链
+- README 只加载 HTTPS 图片；GitHub 图片通过 `/api/github-image` 代理并由 EdgeOne 缓存
+- 图片代理只允许 GitHub 官方图片域名、最多跟随三次受限重定向，并限制单图 8 MB
 - README 相对文档链接会转为对应 GitHub 仓库文件地址，不会误跳到本站目录
-- 联系邮箱和作者 QQ 只在管理员后台与通知邮件中使用
+- 联系邮箱和联系人 QQ 只在管理员后台与通知邮件中使用
 - `.env.local` 与生产密钥不得提交到 Git
 
 ## 项目结构
@@ -329,7 +346,7 @@ app/
   projects/[slug]/page.tsx 独立项目详情与 README
   submit/page.tsx          提交页
   admin/page.tsx           管理员工作台
-  api/                     提交与管理接口
+  api/                     提交、图片代理与管理接口
 components/
   Header.tsx
   Footer.tsx
@@ -342,7 +359,9 @@ lib/
   mongodb.ts               Atlas 连接与索引初始化
   projects.ts              项目和站点设置读写
   github.ts                GitHub 仓库信息与 README
+  licenses.ts              常见开源协议选项与说明
   ai.ts                    DeepSeek 初审
+  mail.ts                  管理员与联系人状态邮件
   mail.ts                  SMTP 通知
   validation.ts            提交数据校验
 ```

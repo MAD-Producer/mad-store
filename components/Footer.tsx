@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Globe2 } from "lucide-react";
+import { Globe2, Mail } from "lucide-react";
 import { SiBilibili, SiDiscord, SiGithub, SiQq, SiX, SiYoutube } from "react-icons/si";
 
 const socialLinks = [
@@ -12,6 +12,7 @@ const socialLinks = [
   { href: "https://discord.gg/vmtJcs5nxk", label: "Discord", icon: SiDiscord },
   { href: "https://x.com/Infinite_Team_X", label: "X", icon: SiX },
   { href: "https://github.com/MAD-Producer/mad-store", label: "GitHub", icon: SiGithub },
+  { href: "mailto:store@madproducer.com", label: "store@madproducer.com", icon: Mail },
 ];
 
 export function Footer() {

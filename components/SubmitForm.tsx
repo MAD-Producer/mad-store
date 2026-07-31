@@ -2,6 +2,7 @@
 
 import { Check, LoaderCircle, Plus, X } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { licenseOptions } from "@/lib/licenses";
 import type { SiteSettings } from "@/lib/types";
 
 export function SubmitForm({ settings }: { settings: SiteSettings }) {
@@ -37,7 +38,7 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
       tags,
       submitterName: form.get("submitterName"),
       submitterEmail: form.get("submitterEmail"),
-      authorQQ: form.get("authorQQ"),
+      contactQQ: form.get("contactQQ"),
       website: form.get("website"),
     };
     try {
@@ -65,7 +66,7 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
           <Check size={26} aria-hidden="true" />
         </span>
         <h2>提交成功</h2>
-        <p>{message}。我们会核对仓库内容与项目信息，并通过你留下的联系方式沟通。</p>
+        <p>{message}。审核状态会通过联系邮箱同步，收录或拒绝后都会收到通知。</p>
         <button type="button" onClick={() => setState("idle")}>
           再提交一个项目
         </button>
@@ -92,7 +93,12 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
           </label>
           <label>
             开源协议 <em>*</em>
-            <input name="license" required maxLength={80} placeholder="例如：MIT / GPL-3.0" />
+            <select name="license" defaultValue="auto" required>
+              {licenseOptions.map((license) => (
+                <option value={license.value} key={license.value}>{license.label}</option>
+              ))}
+            </select>
+            <small className="field-help">不确定时选择自动识别；最终结果会由管理员结合仓库 LICENSE 核对。</small>
           </label>
           <label className="full">
             仓库描述 <em>*</em>
@@ -187,13 +193,13 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
             <input name="submitterEmail" type="email" required placeholder="用于审核沟通，不会公开" />
           </label>
           <label className="full">
-            作者 QQ <span className="optional">选填</span>
+            联系人 QQ <span className="optional">选填</span>
             <input
-              name="authorQQ"
+              name="contactQQ"
               inputMode="numeric"
               pattern="[1-9][0-9]{4,11}"
               maxLength={12}
-              placeholder="项目作者的 QQ 号"
+              placeholder="用于审核沟通，不会公开"
             />
           </label>
         </div>
@@ -214,7 +220,7 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
           "提交项目"
         )}
       </button>
-      <p className="form-note">提交后，我们会读取公开的仓库信息与 README。</p>
+      <p className="form-note">提交后，我们会读取公开仓库信息与 README，并通过邮箱同步审核状态。</p>
     </form>
   );
 }

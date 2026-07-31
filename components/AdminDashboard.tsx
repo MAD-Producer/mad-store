@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { CheckCircle2, LogOut, Save, Sparkles, XCircle } from "lucide-react";
-import type { Project, ProjectStatus, SiteSettings } from "@/lib/types";
+import { CheckCircle2, LogOut, Plus, Save, Sparkles, X, XCircle } from "lucide-react";
+import { licenseOptions } from "@/lib/licenses";
+import type { Project, ProjectCustomField, ProjectStatus, SiteSettings } from "@/lib/types";
 
 function splitList(value: string) {
   return [...new Set(value.split(/[,，\n]/).map((item) => item.trim()).filter(Boolean))];
@@ -19,12 +20,38 @@ function ProjectEditor({
 }) {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [tags, setTags] = useState(project.tags);
+  const [customTag, setCustomTag] = useState("");
+  const [customFields, setCustomFields] = useState<ProjectCustomField[]>(project.customFields || []);
+
+  function toggleTag(tag: string) {
+    setTags((current) =>
+      current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag].slice(0, 12),
+    );
+  }
+
+  function addCustomTag() {
+    const value = customTag.trim().slice(0, 24);
+    if (value && !tags.includes(value)) setTags((current) => [...current, value].slice(0, 12));
+    setCustomTag("");
+  }
+
+  function updateCustomField(index: number, key: keyof ProjectCustomField, value: string) {
+    setCustomFields((current) =>
+      current.map((field, fieldIndex) => fieldIndex === index ? { ...field, [key]: value } : field),
+    );
+  }
 
   async function save(formElement: HTMLFormElement, forcedStatus?: ProjectStatus) {
-    setSaving(true);
-    setMessage("");
     const form = new FormData(formElement);
     const status = forcedStatus || (form.get("status") as ProjectStatus);
+    const rejectionReason = String(form.get("rejectionReason") || "").trim();
+    if (status === "rejected" && !rejectionReason) {
+      setMessage("拒绝项目时请填写拒绝理由");
+      return;
+    }
+    setSaving(true);
+    setMessage("");
     const response = await fetch(`/api/admin/projects/${project.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -34,11 +61,20 @@ function ProjectEditor({
         description: form.get("description"),
         repoUrl: form.get("repoUrl"),
         authorUrl: form.get("authorUrl"),
-        authorQQ: form.get("authorQQ"),
+        contactQQ: form.get("contactQQ"),
+        downloadUrl: form.get("downloadUrl"),
         license: form.get("license"),
         category: form.get("category"),
         systems: form.getAll("systems"),
-        tags: splitList(String(form.get("tags") || "")),
+        tags,
+        customFields: customFields
+          .map((field) => ({
+            label: field.label.trim(),
+            value: field.value.trim(),
+            url: field.url?.trim() || undefined,
+          }))
+          .filter((field) => field.label && field.value),
+        rejectionReason,
         status,
       }),
     });
@@ -99,7 +135,12 @@ function ProjectEditor({
         </label>
         <label>
           开源协议
-          <input name="license" defaultValue={project.license} required />
+          <input name="license" defaultValue={project.license} list={`license-options-${project.id}`} required />
+          <datalist id={`license-options-${project.id}`}>
+            {licenseOptions.filter((item) => item.value !== "auto").map((item) => (
+              <option value={item.value} key={item.value}>{item.label}</option>
+            ))}
+          </datalist>
         </label>
         <label className="full">
           描述
@@ -114,8 +155,12 @@ function ProjectEditor({
           <input name="authorUrl" defaultValue={project.authorUrl} type="url" required />
         </label>
         <label>
-          作者 QQ
-          <input name="authorQQ" defaultValue={project.authorQQ || ""} inputMode="numeric" />
+          联系人 QQ
+          <input name="contactQQ" defaultValue={project.contactQQ || ""} inputMode="numeric" />
+        </label>
+        <label>
+          直链下载地址
+          <input name="downloadUrl" defaultValue={project.downloadUrl || ""} type="url" placeholder="https://..." />
         </label>
         <label>
           分类
@@ -133,9 +178,96 @@ function ProjectEditor({
           </select>
         </label>
         <label className="full">
-          标签（逗号分隔）
-          <input name="tags" defaultValue={project.tags.join(", ")} />
+          拒绝理由（选择拒绝时必填）
+          <textarea
+            name="rejectionReason"
+            defaultValue={project.rejectionReason || ""}
+            rows={3}
+            placeholder="说明未收录的具体原因和可修改的方向，这段内容会发送给联系人。"
+          />
         </label>
+      </div>
+      <div className="admin-choice-block">
+        <strong>项目标签（最多 12 个）</strong>
+        <div className="selectable-tags">
+          {settings.tags.map((tag) => (
+            <button
+              type="button"
+              key={tag}
+              className={tags.includes(tag) ? "active" : ""}
+              onClick={() => toggleTag(tag)}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+        <div className="custom-tag">
+          <input
+            value={customTag}
+            onChange={(event) => setCustomTag(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                addCustomTag();
+              }
+            }}
+            maxLength={24}
+            placeholder="自定义标签"
+          />
+          <button type="button" onClick={addCustomTag} aria-label="添加自定义标签"><Plus size={16} /></button>
+        </div>
+        {!!tags.length && (
+          <div className="selected-tags">
+            {tags.map((tag) => (
+              <button type="button" key={tag} onClick={() => toggleTag(tag)}>
+                {tag}<X size={12} />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="admin-custom-fields">
+        <div className="admin-custom-heading">
+          <div>
+            <strong>自定义展示字段</strong>
+            <p>用于版本号、文档地址、软件大小等额外信息；链接可不填。</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCustomFields((current) => [...current, { label: "", value: "", url: "" }].slice(0, 12))}
+          >
+            <Plus size={14} /> 添加字段
+          </button>
+        </div>
+        {customFields.map((field, index) => (
+          <div className="admin-custom-row" key={index}>
+            <input
+              value={field.label}
+              onChange={(event) => updateCustomField(index, "label", event.target.value)}
+              placeholder="字段名称，例如 当前版本"
+              maxLength={30}
+            />
+            <input
+              value={field.value}
+              onChange={(event) => updateCustomField(index, "value", event.target.value)}
+              placeholder="字段内容，例如 v1.2.0"
+              maxLength={160}
+            />
+            <input
+              value={field.url || ""}
+              onChange={(event) => updateCustomField(index, "url", event.target.value)}
+              placeholder="可选链接 https://..."
+              type="url"
+            />
+            <button
+              type="button"
+              aria-label={`删除字段 ${index + 1}`}
+              onClick={() => setCustomFields((current) => current.filter((_, fieldIndex) => fieldIndex !== index))}
+            >
+              <X size={15} />
+            </button>
+          </div>
+        ))}
       </div>
       <div className="admin-systems">
         <span>适配系统</span>
@@ -152,7 +284,10 @@ function ProjectEditor({
         ))}
       </div>
       {project.submitterEmail && (
-        <p className="submitter-line">提交人：{project.submitterName} · {project.submitterEmail}</p>
+        <p className="submitter-line">
+          联系人：{project.submitterName} · {project.submitterEmail}
+          {project.contactQQ ? ` · QQ ${project.contactQQ}` : ""}
+        </p>
       )}
       <div className="review-actions">
         <button type="submit" disabled={saving}>

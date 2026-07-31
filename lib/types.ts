@@ -1,6 +1,12 @@
 export type SystemName = "Windows" | "macOS";
 export type ProjectStatus = "pending" | "published" | "rejected";
 
+export interface ProjectCustomField {
+  label: string;
+  value: string;
+  url?: string;
+}
+
 export interface AIReview {
   score: number;
   summary: string;
@@ -29,7 +35,10 @@ export interface Project {
   status: ProjectStatus;
   submitterName?: string;
   submitterEmail?: string;
-  authorQQ?: string;
+  contactQQ?: string;
+  downloadUrl?: string;
+  customFields?: ProjectCustomField[];
+  rejectionReason?: string;
   aiReview?: AIReview | null;
   createdAt: string;
   updatedAt: string;
@@ -50,5 +59,5 @@ export interface SubmissionInput {
   tags: string[];
   submitterName: string;
   submitterEmail: string;
-  authorQQ?: string;
+  contactQQ?: string;
 }

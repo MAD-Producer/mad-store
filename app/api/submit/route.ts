@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { reviewWithDeepSeek } from "@/lib/ai";
 import { enrichSubmission } from "@/lib/github";
-import { notifyAdmin } from "@/lib/mail";
+import { notifyAdmin, notifySubmitterReceived } from "@/lib/mail";
 import { createSubmission } from "@/lib/projects";
 import { rateLimit } from "@/lib/rate-limit";
 import { parseSubmission } from "@/lib/validation";
@@ -22,9 +22,13 @@ export async function POST(request: NextRequest) {
       reviewWithDeepSeek(input),
     ]);
     const projectId = await createSubmission(input, enrichment, aiReview);
-    notifyAdmin(input, projectId, aiReview).catch((error) => {
-      console.error("SMTP notification failed", error);
-    });
+    const mailResults = await Promise.allSettled([
+      notifyAdmin(input, projectId, aiReview),
+      notifySubmitterReceived(input, projectId),
+    ]);
+    for (const result of mailResults) {
+      if (result.status === "rejected") console.error("SMTP notification failed", result.reason);
+    }
     return NextResponse.json({
       message: "项目已提交，我们会尽快核对信息",
       id: projectId,

@@ -22,7 +22,10 @@ function serializeProject(document: Document): Project {
     status: document.status,
     submitterName: document.submitterName,
     submitterEmail: document.submitterEmail,
-    authorQQ: document.authorQQ,
+    contactQQ: document.contactQQ || document.authorQQ,
+    downloadUrl: document.downloadUrl,
+    customFields: Array.isArray(document.customFields) ? document.customFields : [],
+    rejectionReason: document.rejectionReason,
     aiReview: document.aiReview || null,
     createdAt: new Date(document.createdAt).toISOString(),
     updatedAt: new Date(document.updatedAt).toISOString(),
@@ -107,13 +110,15 @@ export async function createSubmission(
 
 export async function updateProject(
   id: string,
-  updates: Partial<Pick<Project, "slug" | "name" | "description" | "repoUrl" | "authorUrl" | "authorQQ" | "license" | "systems" | "tags" | "category" | "status">>,
+  updates: Partial<Pick<Project, "slug" | "name" | "description" | "repoUrl" | "authorUrl" | "contactQQ" | "license" | "systems" | "tags" | "category" | "status" | "downloadUrl" | "customFields" | "rejectionReason">>,
 ) {
   if (!hasMongoConfig()) throw new Error("站点数据库尚未配置");
   const db = await getDatabase();
   const filter = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id };
   const allowed: Record<string, unknown> = {};
-  const keys = ["slug", "name", "description", "repoUrl", "authorUrl", "authorQQ", "license", "systems", "tags", "category", "status"] as const;
+  const existing = await db.collection("projects").findOne(filter);
+  if (!existing) throw new Error("未找到项目");
+  const keys = ["slug", "name", "description", "repoUrl", "authorUrl", "contactQQ", "license", "systems", "tags", "category", "status", "downloadUrl", "customFields", "rejectionReason"] as const;
   for (const key of keys) if (updates[key] !== undefined) allowed[key] = updates[key];
   if (typeof allowed.slug === "string") {
     if (!allowed.slug.trim()) throw new Error("slug 不能为空");
@@ -125,8 +130,11 @@ export async function updateProject(
     if (duplicate) throw new Error("这个 slug 已被其他项目使用");
   }
   allowed.updatedAt = new Date();
-  const result = await db.collection("projects").updateOne(filter, { $set: allowed });
-  if (!result.matchedCount) throw new Error("未找到项目");
+  await db.collection("projects").updateOne(filter, { $set: allowed });
+  return {
+    previous: serializeProject(existing),
+    updated: serializeProject({ ...existing, ...allowed }),
+  };
 }
 
 export async function updateSettings(settings: SiteSettings) {

@@ -66,6 +66,9 @@ export async function enrichSubmission(input: SubmissionInput) {
     language: repo.language || undefined,
     canonicalRepoUrl: repo.html_url,
     canonicalAuthorUrl: repo.owner.html_url,
-    detectedLicense: repo.license?.spdx_id || repo.license?.name || input.license,
+    detectedLicense:
+      repo.license?.spdx_id ||
+      repo.license?.name ||
+      (input.license === "auto" ? "未声明开源协议" : input.license),
   };
 }

@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasValidOrigin, isAdmin } from "@/lib/auth";
+import { notifySubmitterStatus } from "@/lib/mail";
 import { isProjectStatus, updateProject } from "@/lib/projects";
+import type { ProjectCustomField } from "@/lib/types";
+
+function optionalHttpsUrl(value: unknown, field: string) {
+  const clean = String(value || "").trim().slice(0, 500);
+  if (!clean) return "";
+  try {
+    if (new URL(clean).protocol !== "https:") throw new Error();
+    return clean;
+  } catch {
+    throw new Error(`${field}必须是有效的 HTTPS 地址`);
+  }
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -18,19 +31,45 @@ export async function PATCH(
     const tags = Array.isArray(body.tags)
       ? [...new Set(body.tags.map(String).map((item) => item.trim()).filter(Boolean))].slice(0, 12)
       : [];
-    await updateProject(id, {
+    const customFields: ProjectCustomField[] = Array.isArray(body.customFields)
+      ? body.customFields
+          .map((item) => {
+            const field = item && typeof item === "object" ? item as Record<string, unknown> : {};
+            return {
+              label: String(field.label || "").trim().slice(0, 30),
+              value: String(field.value || "").trim().slice(0, 160),
+              url: optionalHttpsUrl(field.url, "自定义字段链接") || undefined,
+            };
+          })
+          .filter((field) => field.label && field.value)
+          .slice(0, 12)
+      : [];
+    const rejectionReason = String(body.rejectionReason || "").trim().slice(0, 600);
+    if (body.status === "rejected" && !rejectionReason) throw new Error("拒绝项目时必须填写拒绝理由");
+    const result = await updateProject(id, {
       slug: String(body.slug || "").trim().slice(0, 72),
       name: String(body.name || "").trim().slice(0, 80),
       description: String(body.description || "").trim().slice(0, 320),
       repoUrl: String(body.repoUrl || "").trim().slice(0, 300),
       authorUrl: String(body.authorUrl || "").trim().slice(0, 300),
-      authorQQ: String(body.authorQQ || "").trim().slice(0, 20),
+      contactQQ: String(body.contactQQ || "").trim().slice(0, 20),
+      downloadUrl: optionalHttpsUrl(body.downloadUrl, "直链下载地址"),
       license: String(body.license || "").trim().slice(0, 80),
       category: String(body.category || "其他").trim().slice(0, 40),
       systems,
       tags,
+      customFields,
+      rejectionReason,
       status: body.status,
     });
+    if (
+      result.previous.status !== result.updated.status &&
+      (result.updated.status === "published" || result.updated.status === "rejected")
+    ) {
+      await notifySubmitterStatus(result.updated).catch((error) => {
+        console.error("Submitter status email failed", error);
+      });
+    }
     return NextResponse.json({ message: body.status === "published" ? "已人工审核并发布" : "项目已更新" });
   } catch (error) {
     return NextResponse.json(
