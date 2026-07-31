@@ -56,6 +56,7 @@ export async function PATCH(
       authorUrl: String(body.authorUrl || "").trim().slice(0, 300),
       contactQQ: String(body.contactQQ || "").trim().slice(0, 20),
       downloadUrl: optionalHttpsUrl(body.downloadUrl, "直链下载地址"),
+      officialUrl: optionalHttpsUrl(body.officialUrl, "官网地址"),
       license: String(body.license || "").trim().slice(0, 80),
       category: String(body.category || "其他").trim().slice(0, 40),
       systems,

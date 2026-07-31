@@ -63,6 +63,7 @@ function ProjectEditor({
         authorUrl: form.get("authorUrl"),
         contactQQ: form.get("contactQQ"),
         downloadUrl: form.get("downloadUrl"),
+        officialUrl: form.get("officialUrl"),
         license: form.get("license"),
         category: form.get("category"),
         systems: form.getAll("systems"),
@@ -156,6 +157,10 @@ function ProjectEditor({
         <label>
           直链下载地址
           <input name="downloadUrl" defaultValue={project.downloadUrl || ""} type="url" placeholder="https://..." />
+        </label>
+        <label>
+          官网地址
+          <input name="officialUrl" defaultValue={project.officialUrl || ""} type="url" placeholder="https://..." />
         </label>
         <label>
           分类

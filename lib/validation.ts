@@ -13,6 +13,13 @@ function validHttpUrl(value: string, host?: string) {
   }
 }
 
+function optionalHttpsUrl(value: unknown, max = 500) {
+  const cleaned = clean(value, max);
+  if (!cleaned) return "";
+  if (!validHttpUrl(cleaned)) throw new Error("官网和下载地址必须使用有效的 HTTPS 地址");
+  return cleaned;
+}
+
 export function parseSubmission(body: Record<string, unknown>): SubmissionInput {
   const systems = Array.isArray(body.systems)
     ? body.systems.filter(
@@ -34,6 +41,8 @@ export function parseSubmission(body: Record<string, unknown>): SubmissionInput 
     submitterName: clean(body.submitterName, 60),
     submitterEmail: clean(body.submitterEmail, 120).toLowerCase(),
     contactQQ: clean(body.contactQQ, 20),
+    downloadUrl: optionalHttpsUrl(body.downloadUrl),
+    officialUrl: optionalHttpsUrl(body.officialUrl),
   };
   if (input.name.length < 2) throw new Error("请填写仓库名称");
   if (input.description.length < 12) throw new Error("仓库描述至少需要 12 个字");

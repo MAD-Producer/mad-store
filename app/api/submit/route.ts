@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "提交过于频繁，请一小时后再试" }, { status: 429 });
     }
     const body = (await request.json()) as Record<string, unknown>;
-    if (body.website) return NextResponse.json({ message: "提交成功" });
+    if (body.companyWebsite) return NextResponse.json({ message: "提交成功" });
     const input = parseSubmission(body);
     const [enrichment, aiReview] = await Promise.all([
       enrichSubmission(input),

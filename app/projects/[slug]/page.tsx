@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Download,
   ExternalLink,
+  Globe2,
   Info,
   Laptop,
   Scale,
@@ -102,6 +103,7 @@ export default async function ProjectDetailPage({
     operatingSystem: project.systems,
     programmingLanguage: project.language,
     downloadUrl: project.downloadUrl,
+    url: project.officialUrl,
     author: { "@type": "Person", url: project.authorUrl },
   };
 
@@ -121,6 +123,11 @@ export default async function ProjectDetailPage({
               {project.downloadUrl && (
                 <a className="repo-button primary" href={project.downloadUrl} target="_blank" rel="noreferrer">
                   <Download size={17} /> 直接下载 <ExternalLink size={13} />
+                </a>
+              )}
+              {project.officialUrl && (
+                <a className="repo-button" href={project.officialUrl} target="_blank" rel="noreferrer">
+                  <Globe2 size={17} /> 项目官网 <ExternalLink size={13} />
                 </a>
               )}
               <a className="repo-button" href={project.repoUrl} target="_blank" rel="noreferrer">
@@ -157,6 +164,12 @@ export default async function ProjectDetailPage({
             <div>
               <Download /><span>直链下载</span>
               <a href={project.downloadUrl} target="_blank" rel="noreferrer">直接获取项目文件</a>
+            </div>
+          )}
+          {project.officialUrl && (
+            <div>
+              <Globe2 /><span>项目官网</span>
+              <a href={project.officialUrl} target="_blank" rel="noreferrer">访问项目官方网站</a>
             </div>
           )}
           {(project.customFields || []).map((field) => (

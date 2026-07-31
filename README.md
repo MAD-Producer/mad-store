@@ -261,6 +261,8 @@ EdgeOne Pages Functions 当前没有可直接填写到 Atlas 的固定出口 IP 
 | `authorUrl` | 作者 GitHub 主页 |
 | `license` | 开源协议 |
 | `systems` | Windows、macOS、Web |
+| `downloadUrl` | 可选的 HTTPS 直链下载地址 |
+| `officialUrl` | 可选的项目官网 HTTPS 地址 |
 | `tags` | 项目标签 |
 | `category` | 管理员指定的分类 |
 | `readme` | 提交时读取的 README |

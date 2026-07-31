@@ -39,7 +39,9 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
       submitterName: form.get("submitterName"),
       submitterEmail: form.get("submitterEmail"),
       contactQQ: form.get("contactQQ"),
-      website: form.get("website"),
+      downloadUrl: form.get("downloadUrl"),
+      officialUrl: form.get("officialUrl"),
+      companyWebsite: form.get("companyWebsite"),
     };
     try {
       const response = await fetch("/api/submit", {
@@ -77,7 +79,7 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
   return (
     <form className="submit-form" onSubmit={submit}>
       <input
-        name="website"
+        name="companyWebsite"
         className="honeypot"
         tabIndex={-1}
         autoComplete="off"
@@ -113,6 +115,14 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
           <label className="full">
             作者 GitHub 主页 <em>*</em>
             <input name="authorUrl" type="url" required placeholder="https://github.com/owner" />
+          </label>
+          <label>
+            直链下载地址 <span className="optional">选填</span>
+            <input name="downloadUrl" type="url" placeholder="https://example.com/download" />
+          </label>
+          <label>
+            官网地址 <span className="optional">选填</span>
+            <input name="officialUrl" type="url" placeholder="https://example.com" />
           </label>
         </div>
       </fieldset>

@@ -37,6 +37,7 @@ export interface Project {
   submitterEmail?: string;
   contactQQ?: string;
   downloadUrl?: string;
+  officialUrl?: string;
   customFields?: ProjectCustomField[];
   rejectionReason?: string;
   aiReview?: AIReview | null;
@@ -60,4 +61,6 @@ export interface SubmissionInput {
   submitterName: string;
   submitterEmail: string;
   contactQQ?: string;
+  downloadUrl?: string;
+  officialUrl?: string;
 }
