@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { CheckCircle2, LogOut, Plus, Save, Sparkles, X, XCircle } from "lucide-react";
-import { licenseOptions } from "@/lib/licenses";
+import { LicenseSelector } from "@/components/LicenseSelector";
 import type { Project, ProjectCustomField, ProjectStatus, SiteSettings } from "@/lib/types";
 
 function splitList(value: string) {
@@ -135,12 +135,7 @@ function ProjectEditor({
         </label>
         <label>
           开源协议
-          <input name="license" defaultValue={project.license} list={`license-options-${project.id}`} required />
-          <datalist id={`license-options-${project.id}`}>
-            {licenseOptions.filter((item) => item.value !== "auto").map((item) => (
-              <option value={item.value} key={item.value}>{item.label}</option>
-            ))}
-          </datalist>
+          <LicenseSelector defaultValue={project.license} />
         </label>
         <label className="full">
           描述
@@ -283,12 +278,25 @@ function ProjectEditor({
           </label>
         ))}
       </div>
-      {project.submitterEmail && (
-        <p className="submitter-line">
-          联系人：{project.submitterName} · {project.submitterEmail}
-          {project.contactQQ ? ` · QQ ${project.contactQQ}` : ""}
-        </p>
-      )}
+      <div className="admin-contact-card">
+        <strong>提交联系人</strong>
+        <div>
+          <span>称呼</span>
+          <b>{project.submitterName || "历史项目未记录"}</b>
+        </div>
+        <div>
+          <span>邮箱</span>
+          {project.submitterEmail ? (
+            <a href={`mailto:${project.submitterEmail}`}>{project.submitterEmail}</a>
+          ) : (
+            <b>历史项目未记录</b>
+          )}
+        </div>
+        <div>
+          <span>QQ</span>
+          <b>{project.contactQQ || "未填写"}</b>
+        </div>
+      </div>
       <div className="review-actions">
         <button type="submit" disabled={saving}>
           <Save size={16} />

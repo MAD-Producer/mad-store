@@ -2,7 +2,7 @@
 
 import { Check, LoaderCircle, Plus, X } from "lucide-react";
 import { FormEvent, useState } from "react";
-import { licenseOptions } from "@/lib/licenses";
+import { LicenseSelector } from "@/components/LicenseSelector";
 import type { SiteSettings } from "@/lib/types";
 
 export function SubmitForm({ settings }: { settings: SiteSettings }) {
@@ -93,12 +93,7 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
           </label>
           <label>
             开源协议 <em>*</em>
-            <select name="license" defaultValue="auto" required>
-              {licenseOptions.map((license) => (
-                <option value={license.value} key={license.value}>{license.label}</option>
-              ))}
-            </select>
-            <small className="field-help">不确定时选择自动识别；最终结果会由管理员结合仓库 LICENSE 核对。</small>
+            <LicenseSelector />
           </label>
           <label className="full">
             仓库描述 <em>*</em>
