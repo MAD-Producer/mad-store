@@ -7,6 +7,11 @@ export interface ProjectCustomField {
   url?: string;
 }
 
+export interface ProjectDownload {
+  label: string;
+  url: string;
+}
+
 export interface AIReview {
   score: number;
   summary: string;
@@ -36,6 +41,8 @@ export interface Project {
   submitterName?: string;
   submitterEmail?: string;
   contactQQ?: string;
+  downloads?: ProjectDownload[];
+  /** 兼容早期版本中的单下载地址。 */
   downloadUrl?: string;
   officialUrl?: string;
   customFields?: ProjectCustomField[];
@@ -61,6 +68,5 @@ export interface SubmissionInput {
   submitterName: string;
   submitterEmail: string;
   contactQQ?: string;
-  downloadUrl?: string;
   officialUrl?: string;
 }

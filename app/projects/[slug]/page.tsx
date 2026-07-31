@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
+  ChevronDown,
   Download,
   ExternalLink,
   Globe2,
@@ -93,6 +94,11 @@ export default async function ProjectDetailPage({
   const project = await getProjectBySlug(slug);
   if (!project) notFound();
   const readme = project.readme || (await fetchReadme(project.repoUrl));
+  const downloads = project.downloads?.length
+    ? project.downloads
+    : project.downloadUrl
+      ? [{ label: "直接下载", url: project.downloadUrl }]
+      : [];
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareSourceCode",
@@ -102,7 +108,7 @@ export default async function ProjectDetailPage({
     license: project.license,
     operatingSystem: project.systems,
     programmingLanguage: project.language,
-    downloadUrl: project.downloadUrl,
+    downloadUrl: downloads.map((download) => download.url),
     url: project.officialUrl,
     author: { "@type": "Person", url: project.authorUrl },
   };
@@ -120,10 +126,24 @@ export default async function ProjectDetailPage({
               <p>{project.description}</p>
             </div>
             <div className="project-actions">
-              {project.downloadUrl && (
-                <a className="repo-button primary" href={project.downloadUrl} target="_blank" rel="noreferrer">
-                  <Download size={17} /> 直接下载 <ExternalLink size={13} />
+              {downloads.length === 1 && (
+                <a className="repo-button primary" href={downloads[0].url} target="_blank" rel="noreferrer">
+                  <Download size={17} /> {downloads[0].label} <ExternalLink size={13} />
                 </a>
+              )}
+              {downloads.length > 1 && (
+                <div className="download-menu">
+                  <button className="repo-button primary" type="button" aria-haspopup="menu">
+                    <Download size={17} /> 下载 <ChevronDown size={13} />
+                  </button>
+                  <div className="download-menu-list" role="menu">
+                    {downloads.map((download) => (
+                      <a key={`${download.label}-${download.url}`} href={download.url} target="_blank" rel="noreferrer" role="menuitem">
+                        <span>{download.label}</span><ExternalLink size={12} />
+                      </a>
+                    ))}
+                  </div>
+                </div>
               )}
               {project.officialUrl && (
                 <a className="repo-button" href={project.officialUrl} target="_blank" rel="noreferrer">
@@ -160,10 +180,14 @@ export default async function ProjectDetailPage({
             <Star /><span>仓库信息</span>
             <strong>{typeof project.stars === "number" ? `${project.stars} Stars` : "公开仓库"}{project.language ? ` · ${project.language}` : ""}</strong>
           </div>
-          {project.downloadUrl && (
+          {!!downloads.length && (
             <div>
               <Download /><span>直链下载</span>
-              <a href={project.downloadUrl} target="_blank" rel="noreferrer">直接获取项目文件</a>
+              {downloads.length === 1 ? (
+                <a href={downloads[0].url} target="_blank" rel="noreferrer">{downloads[0].label}</a>
+              ) : (
+                <strong>{downloads.length} 个下载选项</strong>
+              )}
             </div>
           )}
           {project.officialUrl && (

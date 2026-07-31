@@ -41,7 +41,6 @@ export function parseSubmission(body: Record<string, unknown>): SubmissionInput 
     submitterName: clean(body.submitterName, 60),
     submitterEmail: clean(body.submitterEmail, 120).toLowerCase(),
     contactQQ: clean(body.contactQQ, 20),
-    downloadUrl: optionalHttpsUrl(body.downloadUrl),
     officialUrl: optionalHttpsUrl(body.officialUrl),
   };
   if (input.name.length < 2) throw new Error("请填写仓库名称");

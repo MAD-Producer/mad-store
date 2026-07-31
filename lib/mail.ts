@@ -110,7 +110,6 @@ export async function notifyAdmin(input: SubmissionInput, projectId: string, aiR
     ["项目", input.name],
     ["仓库", input.repoUrl],
     ["官网", input.officialUrl || "未填写"],
-    ["直链下载", input.downloadUrl || "未填写"],
     ["联系人", `${input.submitterName} <${input.submitterEmail}>`],
     ["联系人 QQ", input.contactQQ || "未填写"],
     ["AI 建议", aiReview ? `${aiReview.score} 分，${aiReview.summary}` : "未启用或未完成"],

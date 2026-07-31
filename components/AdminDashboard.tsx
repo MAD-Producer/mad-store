@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { CheckCircle2, LogOut, Plus, Save, Sparkles, X, XCircle } from "lucide-react";
 import { LicenseSelector } from "@/components/LicenseSelector";
-import type { Project, ProjectCustomField, ProjectStatus, SiteSettings } from "@/lib/types";
+import type { Project, ProjectCustomField, ProjectDownload, ProjectStatus, SiteSettings } from "@/lib/types";
 
 function splitList(value: string) {
   return [...new Set(value.split(/[,，\n]/).map((item) => item.trim()).filter(Boolean))];
@@ -23,6 +23,13 @@ function ProjectEditor({
   const [tags, setTags] = useState(project.tags);
   const [customTag, setCustomTag] = useState("");
   const [customFields, setCustomFields] = useState<ProjectCustomField[]>(project.customFields || []);
+  const [downloads, setDownloads] = useState<ProjectDownload[]>(
+    project.downloads?.length
+      ? project.downloads
+      : project.downloadUrl
+        ? [{ label: "直接下载", url: project.downloadUrl }]
+        : [],
+  );
 
   function toggleTag(tag: string) {
     setTags((current) =>
@@ -39,6 +46,14 @@ function ProjectEditor({
   function updateCustomField(index: number, key: keyof ProjectCustomField, value: string) {
     setCustomFields((current) =>
       current.map((field, fieldIndex) => fieldIndex === index ? { ...field, [key]: value } : field),
+    );
+  }
+
+  function updateDownload(index: number, key: keyof ProjectDownload, value: string) {
+    setDownloads((current) =>
+      current.map((download, downloadIndex) =>
+        downloadIndex === index ? { ...download, [key]: value } : download,
+      ),
     );
   }
 
@@ -62,12 +77,17 @@ function ProjectEditor({
         repoUrl: form.get("repoUrl"),
         authorUrl: form.get("authorUrl"),
         contactQQ: form.get("contactQQ"),
-        downloadUrl: form.get("downloadUrl"),
         officialUrl: form.get("officialUrl"),
         license: form.get("license"),
         category: form.get("category"),
         systems: form.getAll("systems"),
         tags,
+        downloads: downloads
+          .map((download) => ({
+            label: download.label.trim(),
+            url: download.url.trim(),
+          }))
+          .filter((download) => download.label && download.url),
         customFields: customFields
           .map((field) => ({
             label: field.label.trim(),
@@ -155,10 +175,6 @@ function ProjectEditor({
           <input name="contactQQ" defaultValue={project.contactQQ || ""} inputMode="numeric" />
         </label>
         <label>
-          直链下载地址
-          <input name="downloadUrl" defaultValue={project.downloadUrl || ""} type="url" placeholder="https://..." />
-        </label>
-        <label>
           官网地址
           <input name="officialUrl" defaultValue={project.officialUrl || ""} type="url" placeholder="https://..." />
         </label>
@@ -225,6 +241,43 @@ function ProjectEditor({
             ))}
           </div>
         )}
+      </div>
+      <div className="admin-custom-fields admin-downloads">
+        <div className="admin-custom-heading">
+          <div>
+            <strong>下载选项</strong>
+            <p>填写选项名称与 HTTPS 下载链接；只有一个选项时，项目页会直接下载。</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDownloads((current) => [...current, { label: "", url: "" }].slice(0, 12))}
+          >
+            <Plus size={14} /> 添加下载
+          </button>
+        </div>
+        {downloads.map((download, index) => (
+          <div className="admin-download-row" key={index}>
+            <input
+              value={download.label}
+              onChange={(event) => updateDownload(index, "label", event.target.value)}
+              placeholder="选项名，例如 Windows x64"
+              maxLength={40}
+            />
+            <input
+              value={download.url}
+              onChange={(event) => updateDownload(index, "url", event.target.value)}
+              placeholder="下载链接 https://..."
+              type="url"
+            />
+            <button
+              type="button"
+              aria-label={`删除下载选项 ${index + 1}`}
+              onClick={() => setDownloads((current) => current.filter((_, downloadIndex) => downloadIndex !== index))}
+            >
+              <X size={15} />
+            </button>
+          </div>
+        ))}
       </div>
       <div className="admin-custom-fields">
         <div className="admin-custom-heading">

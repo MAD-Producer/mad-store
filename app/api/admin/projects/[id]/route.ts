@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hasValidOrigin, isAdmin } from "@/lib/auth";
 import { notifySubmitterStatus } from "@/lib/mail";
 import { isProjectStatus, updateProject } from "@/lib/projects";
-import type { ProjectCustomField } from "@/lib/types";
+import type { ProjectCustomField, ProjectDownload } from "@/lib/types";
 
 function optionalHttpsUrl(value: unknown, field: string) {
   const clean = String(value || "").trim().slice(0, 500);
@@ -46,6 +46,18 @@ export async function PATCH(
           .filter((field) => field.label && field.value)
           .slice(0, 12)
       : [];
+    const downloads: ProjectDownload[] = Array.isArray(body.downloads)
+      ? body.downloads
+          .map((item) => {
+            const download = item && typeof item === "object" ? item as Record<string, unknown> : {};
+            return {
+              label: String(download.label || "").trim().slice(0, 40),
+              url: optionalHttpsUrl(download.url, "下载链接"),
+            };
+          })
+          .filter((download) => download.label && download.url)
+          .slice(0, 12)
+      : [];
     const rejectionReason = String(body.rejectionReason || "").trim().slice(0, 600);
     if (body.status === "rejected" && !rejectionReason) throw new Error("拒绝项目时必须填写拒绝理由");
     const result = await updateProject(id, {
@@ -55,7 +67,7 @@ export async function PATCH(
       repoUrl: String(body.repoUrl || "").trim().slice(0, 300),
       authorUrl: String(body.authorUrl || "").trim().slice(0, 300),
       contactQQ: String(body.contactQQ || "").trim().slice(0, 20),
-      downloadUrl: optionalHttpsUrl(body.downloadUrl, "直链下载地址"),
+      downloads,
       officialUrl: optionalHttpsUrl(body.officialUrl, "官网地址"),
       license: String(body.license || "").trim().slice(0, 80),
       category: String(body.category || "其他").trim().slice(0, 40),

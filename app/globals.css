@@ -114,6 +114,12 @@ button { cursor: pointer; }
 .repo-button:hover { border-color: #bdbdb9; }
 .repo-button.primary { border-color: var(--ink); background: var(--ink); color: var(--white); }
 .repo-button.primary:hover { background: #333; }
+.download-menu { position: relative; }
+.download-menu-list { position: absolute; z-index: 20; top: calc(100% + 7px); right: 0; min-width: 190px; padding: 5px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); box-shadow: 0 14px 34px rgba(35,34,30,.13); opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .15s, transform .15s, visibility .15s; }
+.download-menu-list::before { content: ""; position: absolute; right: 0; bottom: 100%; left: 0; height: 8px; }
+.download-menu:hover .download-menu-list, .download-menu:focus-within .download-menu-list { opacity: 1; visibility: visible; transform: translateY(0); }
+.download-menu-list a { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 10px; border-radius: 5px; color: var(--text); font-size: 9px; white-space: nowrap; }
+.download-menu-list a:hover, .download-menu-list a:focus-visible { background: var(--soft); color: var(--ink); outline: 0; }
 .project-summary-card { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1px; margin-top: 28px; padding: 1px; border-radius: 13px; background: var(--line); box-shadow: 0 12px 34px rgba(35,34,30,.04); overflow: hidden; }
 .project-summary-card > div { min-height: 118px; position: relative; display: grid; grid-template-columns: 24px 1fr; grid-template-rows: auto auto 1fr; gap: 5px 9px; padding: 21px; background: var(--white); }
 .project-summary-card svg { grid-row: 1 / 3; width: 16px; height: 16px; margin-top: 1px; color: var(--brand); }
@@ -264,12 +270,14 @@ button { cursor: pointer; }
 .admin-contact-card a:hover { color: var(--brand); }
 .admin-choice-block, .admin-custom-fields { margin-top: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 7px; background: var(--soft); }
 .admin-choice-block > strong, .admin-custom-heading strong { color: var(--text); font-size: 10px; }
-.admin-choice-block .custom-tag input, .admin-custom-row input { border: 1px solid #dededb; border-radius: 6px; background: var(--white); padding: 8px 9px; outline: 0; color: var(--text); font-size: 9px; }
+.admin-choice-block .custom-tag input, .admin-custom-row input, .admin-download-row input { border: 1px solid #dededb; border-radius: 6px; background: var(--white); padding: 8px 9px; outline: 0; color: var(--text); font-size: 9px; }
 .admin-custom-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .admin-custom-heading p { margin: 5px 0 0; color: var(--muted); font-size: 8px; }
 .admin-custom-heading > button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 5px; background: var(--white); padding: 7px 9px; font-size: 8px; }
 .admin-custom-row { display: grid; grid-template-columns: .75fr 1fr 1.35fr auto; gap: 7px; margin-top: 10px; }
 .admin-custom-row > button { width: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 5px; background: var(--white); color: var(--danger); }
+.admin-download-row { display: grid; grid-template-columns: .8fr 1.6fr auto; gap: 7px; margin-top: 10px; }
+.admin-download-row > button { width: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 5px; background: var(--white); color: var(--danger); }
 .review-actions { display: flex; align-items: center; gap: 7px; padding-top: 13px; border-top: 1px solid var(--line); }
 .review-actions button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; background: white; font-size: 9px; }
 .review-actions button.reject { color: var(--danger); }

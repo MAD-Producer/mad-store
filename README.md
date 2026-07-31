@@ -261,7 +261,6 @@ EdgeOne Pages Functions 当前没有可直接填写到 Atlas 的固定出口 IP 
 | `authorUrl` | 作者 GitHub 主页 |
 | `license` | 开源协议 |
 | `systems` | Windows、macOS、Web |
-| `downloadUrl` | 可选的 HTTPS 直链下载地址 |
 | `officialUrl` | 可选的项目官网 HTTPS 地址 |
 | `tags` | 项目标签 |
 | `category` | 管理员指定的分类 |
@@ -269,7 +268,7 @@ EdgeOne Pages Functions 当前没有可直接填写到 Atlas 的固定出口 IP 
 | `submitterName` | 联系人 |
 | `submitterEmail` | 联系邮箱，仅后台可见 |
 | `contactQQ` | 联系人 QQ，仅后台可见；读取旧数据时兼容 `authorQQ` |
-| `downloadUrl` | 管理员添加的 HTTPS 直链下载地址 |
+| `downloads` | 管理员添加的下载选项列表，每项包含选项名 `label` 和 HTTPS 链接 `url` |
 | `customFields` | 管理员添加的自定义展示字段，可选附带 HTTPS 链接 |
 | `rejectionReason` | 拒绝项目时填写并发送给联系人的原因 |
 | `status` | `pending`、`published` 或 `rejected` |

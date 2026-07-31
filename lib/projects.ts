@@ -23,6 +23,11 @@ function serializeProject(document: Document): Project {
     submitterName: document.submitterName,
     submitterEmail: document.submitterEmail,
     contactQQ: document.contactQQ || document.authorQQ,
+    downloads: Array.isArray(document.downloads)
+      ? document.downloads
+      : document.downloadUrl
+        ? [{ label: "直接下载", url: document.downloadUrl }]
+        : [],
     downloadUrl: document.downloadUrl,
     officialUrl: document.officialUrl,
     customFields: Array.isArray(document.customFields) ? document.customFields : [],
@@ -111,7 +116,7 @@ export async function createSubmission(
 
 export async function updateProject(
   id: string,
-  updates: Partial<Pick<Project, "slug" | "name" | "description" | "repoUrl" | "authorUrl" | "contactQQ" | "license" | "systems" | "tags" | "category" | "status" | "downloadUrl" | "officialUrl" | "customFields" | "rejectionReason">>,
+  updates: Partial<Pick<Project, "slug" | "name" | "description" | "repoUrl" | "authorUrl" | "contactQQ" | "license" | "systems" | "tags" | "category" | "status" | "downloads" | "officialUrl" | "customFields" | "rejectionReason">>,
 ) {
   if (!hasMongoConfig()) throw new Error("站点数据库尚未配置");
   const db = await getDatabase();
@@ -119,7 +124,7 @@ export async function updateProject(
   const allowed: Record<string, unknown> = {};
   const existing = await db.collection("projects").findOne(filter);
   if (!existing) throw new Error("未找到项目");
-  const keys = ["slug", "name", "description", "repoUrl", "authorUrl", "contactQQ", "license", "systems", "tags", "category", "status", "downloadUrl", "officialUrl", "customFields", "rejectionReason"] as const;
+  const keys = ["slug", "name", "description", "repoUrl", "authorUrl", "contactQQ", "license", "systems", "tags", "category", "status", "downloads", "officialUrl", "customFields", "rejectionReason"] as const;
   for (const key of keys) if (updates[key] !== undefined) allowed[key] = updates[key];
   if (typeof allowed.slug === "string") {
     if (!allowed.slug.trim()) throw new Error("slug 不能为空");
