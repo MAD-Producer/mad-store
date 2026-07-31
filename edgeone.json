@@ -1,0 +1,9 @@
+{
+  "name": "mad-store",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm run build",
+  "outputDirectory": ".next",
+  "nodeVersion": "22.11.0",
+  "mainlandRegions": ["ap-shanghai"],
+  "overseasRegions": ["ap-singapore"]
+}
