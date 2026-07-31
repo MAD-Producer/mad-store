@@ -1,0 +1,24 @@
+name: Import MAD Store source
+
+on:
+  push:
+    paths:
+      - source.zip
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand source archive
+        run: |
+          unzip -o source.zip
+          rm -f source.zip .github/workflows/import-source.yml
+          git config user.name "MAD Store Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: import MAD Store source [skip ci]"
+          git push
