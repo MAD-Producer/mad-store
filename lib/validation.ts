@@ -15,7 +15,10 @@ function validHttpUrl(value: string, host?: string) {
 
 export function parseSubmission(body: Record<string, unknown>): SubmissionInput {
   const systems = Array.isArray(body.systems)
-    ? body.systems.filter((value): value is SystemName => value === "Windows" || value === "macOS")
+    ? body.systems.filter(
+        (value): value is SystemName =>
+          value === "Windows" || value === "macOS" || value === "Web",
+      )
     : [];
   const tags = Array.isArray(body.tags)
     ? [...new Set(body.tags.map((tag) => clean(tag, 24)).filter(Boolean))].slice(0, 8)

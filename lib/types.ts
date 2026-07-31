@@ -1,4 +1,4 @@
-export type SystemName = "Windows" | "macOS";
+export type SystemName = "Windows" | "macOS" | "Web";
 export type ProjectStatus = "pending" | "published" | "rejected";
 
 export interface ProjectCustomField {

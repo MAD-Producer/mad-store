@@ -266,13 +266,13 @@ function ProjectEditor({
       </div>
       <div className="admin-systems">
         <span>适配系统</span>
-        {["Windows", "macOS"].map((system) => (
+        {["Windows", "macOS", "Web"].map((system) => (
           <label key={system}>
             <input
               type="checkbox"
               name="systems"
               value={system}
-              defaultChecked={project.systems.includes(system as "Windows" | "macOS")}
+              defaultChecked={project.systems.includes(system as "Windows" | "macOS" | "Web")}
             />
             {system}
           </label>

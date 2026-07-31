@@ -123,7 +123,7 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
         <div className="choice-group">
           <strong>适配系统 <em>*</em></strong>
           <div className="check-row">
-            {["Windows", "macOS"].map((system) => (
+            {["Windows", "macOS", "Web"].map((system) => (
               <label className="check-chip" key={system}>
                 <input type="checkbox" name="systems" value={system} />
                 <span>{system}</span>

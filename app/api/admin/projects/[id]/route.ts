@@ -26,7 +26,9 @@ export async function PATCH(
     const body = (await request.json()) as Record<string, unknown>;
     if (body.status !== undefined && !isProjectStatus(body.status)) throw new Error("审核状态无效");
     const systems = Array.isArray(body.systems)
-      ? body.systems.filter((item) => item === "Windows" || item === "macOS")
+      ? body.systems.filter(
+          (item) => item === "Windows" || item === "macOS" || item === "Web",
+        )
       : [];
     const tags = Array.isArray(body.tags)
       ? [...new Set(body.tags.map(String).map((item) => item.trim()).filter(Boolean))].slice(0, 12)

@@ -97,7 +97,7 @@ export function ProjectExplorer({
         <div className="filter-level">
           <strong>系统</strong>
           <div>
-            {(["全部", "Windows", "macOS"] as const).map((item) => (
+            {(["全部", "Windows", "macOS", "Web"] as const).map((item) => (
               <button
                 key={item}
                 type="button"
