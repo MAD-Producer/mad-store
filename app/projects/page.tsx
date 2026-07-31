@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { ExternalLink, GitFork } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ProjectExplorer } from "@/components/ProjectExplorer";
@@ -78,6 +80,7 @@ export default async function ProjectsPage({
               {readme ? (
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw, rehypeSanitize]}
                   components={{
                     a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer">{children}</a>,
                     img: ({ alt }) => <span className="readme-image-placeholder">图片：{alt || "仓库图片"}</span>,

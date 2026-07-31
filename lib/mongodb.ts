@@ -18,10 +18,17 @@ async function getClient() {
     const client = new MongoClient(uri, {
       serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
       maxPoolSize: 8,
+      serverSelectionTimeoutMS: 8_000,
     });
     global.__madMongoPromise = client.connect();
   }
-  return global.__madMongoPromise;
+  try {
+    return await global.__madMongoPromise;
+  } catch (error) {
+    // Edge 函数可能在 Atlas 网络规则生效前收到请求；失败连接不能永久缓存。
+    global.__madMongoPromise = undefined;
+    throw error;
+  }
 }
 
 let initialized = false;

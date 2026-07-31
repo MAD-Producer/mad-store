@@ -6,9 +6,12 @@ export function Header() {
     <header className="site-header">
       <div className="shell header-inner">
         <Link href="/" className="brand" aria-label="MAD Store 首页">
-          <Image src="/mad-producer-logo.webp" alt="" width={32} height={32} priority />
+          <span className="brand-mark">
+            <Image src="/mad-store-icon.webp" alt="" width={32} height={32} priority />
+          </span>
           <span>
             <strong>MAD Store</strong>
+            <small>OPEN SOURCE INDEX</small>
           </span>
         </Link>
         <nav className="main-nav" aria-label="主导航">

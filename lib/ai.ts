@@ -20,7 +20,8 @@ export async function reviewWithDeepSeek(input: SubmissionInput): Promise<AIRevi
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+        model: process.env.DEEPSEEK_MODEL || "deepseek-v4-flash",
+        thinking: { type: "disabled" },
         temperature: 0.1,
         response_format: { type: "json_object" },
         messages: [
