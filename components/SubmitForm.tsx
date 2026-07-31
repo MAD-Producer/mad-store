@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, LoaderCircle, Plus, X } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { LicenseSelector } from "@/components/LicenseSelector";
 import type { SiteSettings } from "@/lib/types";
 
@@ -10,6 +10,7 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
   const [customTag, setCustomTag] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const submitting = useRef(false);
 
   function toggleTag(tag: string) {
     setTags((current) =>
@@ -25,24 +26,27 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setState("loading");
     setMessage("");
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      name: form.get("name"),
-      description: form.get("description"),
-      repoUrl: form.get("repoUrl"),
-      authorUrl: form.get("authorUrl"),
-      license: form.get("license"),
-      systems: form.getAll("systems"),
-      tags,
-      submitterName: form.get("submitterName"),
-      submitterEmail: form.get("submitterEmail"),
-      contactQQ: form.get("contactQQ"),
-      officialUrl: form.get("officialUrl"),
-      companyWebsite: form.get("companyWebsite"),
-    };
+    const formElement = event.currentTarget;
     try {
+      const form = new FormData(formElement);
+      const payload = {
+        name: form.get("name"),
+        description: form.get("description"),
+        repoUrl: form.get("repoUrl"),
+        authorUrl: form.get("authorUrl"),
+        license: form.get("license"),
+        systems: form.getAll("systems"),
+        tags,
+        submitterName: form.get("submitterName"),
+        submitterEmail: form.get("submitterEmail"),
+        contactQQ: form.get("contactQQ"),
+        officialUrl: form.get("officialUrl"),
+        companyWebsite: form.get("companyWebsite"),
+      };
       const response = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,11 +56,13 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
       if (!response.ok) throw new Error(data.message || "提交失败，请稍后重试");
       setState("success");
       setMessage(data.message || "提交成功");
-      event.currentTarget.reset();
+      formElement.reset();
       setTags([]);
     } catch (error) {
       setState("error");
       setMessage(error instanceof Error ? error.message : "提交失败，请稍后重试");
+    } finally {
+      submitting.current = false;
     }
   }
 
