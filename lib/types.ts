@@ -29,6 +29,7 @@ export interface Project {
   status: ProjectStatus;
   submitterName?: string;
   submitterEmail?: string;
+  authorQQ?: string;
   aiReview?: AIReview | null;
   createdAt: string;
   updatedAt: string;
@@ -49,4 +50,5 @@ export interface SubmissionInput {
   tags: string[];
   submitterName: string;
   submitterEmail: string;
+  authorQQ?: string;
 }

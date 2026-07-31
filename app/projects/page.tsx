@@ -11,7 +11,7 @@ import { getProjectBySlug, getPublishedProjects, getSettings } from "@/lib/proje
 export const revalidate = 300;
 export const metadata: Metadata = {
   title: "开源项目",
-  description: "浏览面向 MAD / AMV 创作者的中文开源工具、脚本、下载、转码与文档项目。",
+  description: "浏览面向 MAD / AMV 创作者的开源工具、脚本、下载、转码与文档项目。",
   alternates: { canonical: "/projects" },
 };
 
@@ -49,8 +49,8 @@ export default async function ProjectsPage({
       <main className="projects-page">
         <section className="shell page-heading">
           <span className="eyebrow">PROJECTS</span>
-          <h1>开源项目</h1>
-          <p>筛选、查看，并直接阅读仓库 README。</p>
+          <h1>项目</h1>
+          <p>找到需要的工具，并在这里读完它的 README。</p>
         </section>
         <section className="shell">
           <ProjectExplorer projects={projects} settings={settings} />

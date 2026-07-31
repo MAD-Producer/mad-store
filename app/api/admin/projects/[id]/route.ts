@@ -23,6 +23,7 @@ export async function PATCH(
       description: String(body.description || "").trim().slice(0, 320),
       repoUrl: String(body.repoUrl || "").trim().slice(0, 300),
       authorUrl: String(body.authorUrl || "").trim().slice(0, 300),
+      authorQQ: String(body.authorQQ || "").trim().slice(0, 20),
       license: String(body.license || "").trim().slice(0, 80),
       category: String(body.category || "其他").trim().slice(0, 40),
       systems,

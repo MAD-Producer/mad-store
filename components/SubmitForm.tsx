@@ -37,6 +37,7 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
       tags,
       submitterName: form.get("submitterName"),
       submitterEmail: form.get("submitterEmail"),
+      authorQQ: form.get("authorQQ"),
       website: form.get("website"),
     };
     try {
@@ -63,8 +64,8 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
         <span>
           <Check size={26} aria-hidden="true" />
         </span>
-        <h2>已经进入人工审核队列</h2>
-        <p>{message}。管理员会核对仓库内容、分类和标签，审核通过后才会公开展示。</p>
+        <h2>提交成功</h2>
+        <p>{message}。我们会核对仓库内容与项目信息，并通过你留下的联系方式沟通。</p>
         <button type="button" onClick={() => setState("idle")}>
           再提交一个项目
         </button>
@@ -82,10 +83,8 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
         aria-hidden="true"
       />
       <fieldset>
-        <legend>
-          <span>01</span>
-          仓库信息
-        </legend>
+        <legend>仓库信息</legend>
+        <p className="fieldset-note">填写项目在导航站中展示的基本信息。</p>
         <div className="form-grid">
           <label>
             仓库名称 <em>*</em>
@@ -103,7 +102,7 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
               minLength={12}
               maxLength={320}
               rows={4}
-              placeholder="用中文说明它解决了什么问题、适合谁使用"
+              placeholder="说明它解决什么问题，以及适合谁使用"
             />
           </label>
           <label className="full">
@@ -118,10 +117,8 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
       </fieldset>
 
       <fieldset>
-        <legend>
-          <span>02</span>
-          适配与标签
-        </legend>
+        <legend>适配与标签</legend>
+        <p className="fieldset-note">帮助其他创作者更快判断项目是否适合自己。</p>
         <div className="choice-group">
           <strong>适配系统 <em>*</em></strong>
           <div className="check-row">
@@ -178,10 +175,8 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
       </fieldset>
 
       <fieldset>
-        <legend>
-          <span>03</span>
-          联系方式
-        </legend>
+        <legend>联系方式</legend>
+        <p className="fieldset-note">仅用于核对提交信息和后续沟通，不会在项目页公开。</p>
         <div className="form-grid">
           <label>
             联系人 <em>*</em>
@@ -191,10 +186,20 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
             联系邮箱 <em>*</em>
             <input name="submitterEmail" type="email" required placeholder="用于审核沟通，不会公开" />
           </label>
+          <label className="full">
+            作者 QQ <span className="optional">选填</span>
+            <input
+              name="authorQQ"
+              inputMode="numeric"
+              pattern="[1-9][0-9]{4,11}"
+              maxLength={12}
+              placeholder="项目作者的 QQ 号"
+            />
+          </label>
         </div>
         <label className="consent">
           <input type="checkbox" required />
-          <span>我确认该仓库公开可访问，且提交信息真实；理解最终是否收录由管理员人工判断。</span>
+          <span>我确认仓库公开可访问，并已获得提交该项目信息的授权。</span>
         </label>
       </fieldset>
 
@@ -206,10 +211,10 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
             正在读取仓库并提交
           </>
         ) : (
-          "提交人工审核"
+          "提交项目"
         )}
       </button>
-      <p className="form-note">系统会读取公开 README，并可使用 DeepSeek 生成初审建议；AI 不会自动发布项目。</p>
+      <p className="form-note">提交后，我们会读取公开的仓库信息与 README。</p>
     </form>
   );
 }

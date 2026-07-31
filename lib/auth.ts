@@ -11,20 +11,46 @@ function safeEqual(a: string, b: string) {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
-function signature(timestamp: string) {
+function signature(payload: string) {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret) return "";
-  return createHmac("sha256", secret).update(timestamp).digest("base64url");
+  return createHmac("sha256", secret).update(payload).digest("base64url");
 }
 
-export function verifyAdminPassword(password: string) {
-  const expected = process.env.ADMIN_PASSWORD;
-  return Boolean(expected && safeEqual(password, expected));
+function adminAccounts() {
+  const raw = process.env.ADMIN_ACCOUNTS;
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as Array<{ username?: unknown; password?: unknown }>;
+      return parsed
+        .filter(
+          (account): account is { username: string; password: string } =>
+            typeof account.username === "string" &&
+            typeof account.password === "string" &&
+            Boolean(account.username.trim()) &&
+            Boolean(account.password),
+        )
+        .map((account) => ({ username: account.username.trim(), password: account.password }));
+    } catch {
+      return [];
+    }
+  }
+  return process.env.ADMIN_PASSWORD
+    ? [{ username: process.env.ADMIN_USERNAME || "admin", password: process.env.ADMIN_PASSWORD }]
+    : [];
 }
 
-export function createSessionToken() {
+export function verifyAdminCredentials(username: string, password: string) {
+  const normalizedUsername = username.trim();
+  const account = adminAccounts().find((item) => safeEqual(item.username, normalizedUsername));
+  return account && safeEqual(account.password, password) ? account.username : null;
+}
+
+export function createSessionToken(username: string) {
   const timestamp = Math.floor(Date.now() / 1000).toString();
-  return `${timestamp}.${signature(timestamp)}`;
+  const identity = Buffer.from(username).toString("base64url");
+  const payload = `${identity}.${timestamp}`;
+  return `${payload}.${signature(payload)}`;
 }
 
 export function sessionCookieOptions() {
@@ -41,9 +67,10 @@ export function sessionCookieOptions() {
 export async function isAdmin() {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token) return false;
-  const [timestamp, providedSignature] = token.split(".");
-  if (!timestamp || !providedSignature || !signature(timestamp)) return false;
-  if (!safeEqual(providedSignature, signature(timestamp))) return false;
+  const [identity, timestamp, providedSignature] = token.split(".");
+  if (!identity || !timestamp || !providedSignature) return false;
+  const payload = `${identity}.${timestamp}`;
+  if (!signature(payload) || !safeEqual(providedSignature, signature(payload))) return false;
   const age = Math.floor(Date.now() / 1000) - Number(timestamp);
   return Number.isFinite(age) && age >= 0 && age <= MAX_AGE;
 }

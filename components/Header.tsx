@@ -9,7 +9,6 @@ export function Header() {
           <Image src="/mad-producer-logo.webp" alt="" width={32} height={32} priority />
           <span>
             <strong>MAD Store</strong>
-            <small>MAD Producer Project</small>
           </span>
         </Link>
         <nav className="main-nav" aria-label="主导航">

@@ -15,7 +15,10 @@ export function AdminLogin() {
     const response = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: form.get("password") }),
+      body: JSON.stringify({
+        username: form.get("username"),
+        password: form.get("password"),
+      }),
     });
     const data = (await response.json()) as { message?: string };
     if (response.ok) {
@@ -36,8 +39,12 @@ export function AdminLogin() {
       <p>仅站点管理员可访问。登录后可以审核、修改、分类并发布项目。</p>
       <form onSubmit={submit}>
         <label>
-          管理员密码
-          <input name="password" type="password" required autoFocus autoComplete="current-password" />
+          管理员账号
+          <input name="username" required autoFocus autoComplete="username" />
+        </label>
+        <label>
+          密码
+          <input name="password" type="password" required autoComplete="current-password" />
         </label>
         {error && <p className="form-error" role="alert">{error}</p>}
         <button type="submit" disabled={loading}>

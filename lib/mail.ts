@@ -3,7 +3,7 @@ import type { Project, SubmissionInput } from "./types";
 
 export async function notifyAdmin(input: SubmissionInput, projectId: string, aiReview: Project["aiReview"]) {
   const host = process.env.SMTP_HOST;
-  const to = process.env.ADMIN_EMAIL;
+  const to = process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL;
   if (!host || !to) return;
 
   const transporter = nodemailer.createTransport({
@@ -24,6 +24,7 @@ export async function notifyAdmin(input: SubmissionInput, projectId: string, aiR
       `项目：${input.name}`,
       `仓库：${input.repoUrl}`,
       `提交人：${input.submitterName} <${input.submitterEmail}>`,
+      `作者 QQ：${input.authorQQ || "未填写"}`,
       `AI 建议：${aiReview ? `${aiReview.score} 分，${aiReview.summary}` : "未启用或未完成"}`,
       `记录 ID：${projectId}`,
       `审核入口：${adminUrl}`,

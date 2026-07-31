@@ -26,9 +26,7 @@ export async function POST(request: NextRequest) {
       console.error("SMTP notification failed", error);
     });
     return NextResponse.json({
-      message: aiReview
-        ? "项目已提交，AI 初审建议已附在记录中"
-        : "项目已提交并等待管理员审核",
+      message: "项目已提交，我们会尽快核对信息",
       id: projectId,
     });
   } catch (error) {

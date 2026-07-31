@@ -22,6 +22,7 @@ function serializeProject(document: Document): Project {
     status: document.status,
     submitterName: document.submitterName,
     submitterEmail: document.submitterEmail,
+    authorQQ: document.authorQQ,
     aiReview: document.aiReview || null,
     createdAt: new Date(document.createdAt).toISOString(),
     updatedAt: new Date(document.updatedAt).toISOString(),
@@ -106,13 +107,13 @@ export async function createSubmission(
 
 export async function updateProject(
   id: string,
-  updates: Partial<Pick<Project, "name" | "description" | "repoUrl" | "authorUrl" | "license" | "systems" | "tags" | "category" | "status">>,
+  updates: Partial<Pick<Project, "name" | "description" | "repoUrl" | "authorUrl" | "authorQQ" | "license" | "systems" | "tags" | "category" | "status">>,
 ) {
   if (!hasMongoConfig()) throw new Error("站点数据库尚未配置");
   const db = await getDatabase();
   const filter = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id };
   const allowed: Record<string, unknown> = {};
-  const keys = ["name", "description", "repoUrl", "authorUrl", "license", "systems", "tags", "category", "status"] as const;
+  const keys = ["name", "description", "repoUrl", "authorUrl", "authorQQ", "license", "systems", "tags", "category", "status"] as const;
   for (const key of keys) if (updates[key] !== undefined) allowed[key] = updates[key];
   if (typeof allowed.name === "string") allowed.slug = createSlug(allowed.name);
   allowed.updatedAt = new Date();

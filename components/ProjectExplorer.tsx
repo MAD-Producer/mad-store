@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Star } from "lucide-react";
+import { ArrowUpRight, Search, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Project, SiteSettings } from "@/lib/types";
 
@@ -49,19 +49,22 @@ export function ProjectExplorer({
           ))}
         </div>
       </div>
-      <div className="simple-project-grid">
+      <div className="simple-project-list">
         {filtered.map((project) => (
           <a className="simple-project-card" href={`/projects?project=${project.slug}#readme`} key={project.id}>
-            <div>
+            <div className="project-card-meta">
               <span>{project.category}</span>
               {typeof project.stars === "number" && <small><Star size={12} />{project.stars}</small>}
             </div>
-            <h2>{project.name}</h2>
-            <p>{project.description}</p>
-            <footer>
+            <div className="project-card-body">
+              <h2>{project.name}</h2>
+              <p>{project.description}</p>
+            </div>
+            <div className="project-card-tail">
               <span>{project.systems.join(" / ")}</span>
               <span>{project.tags.slice(0, 3).map((tag) => `#${tag}`).join("  ")}</span>
-            </footer>
+              <ArrowUpRight size={18} />
+            </div>
           </a>
         ))}
       </div>

@@ -30,6 +30,7 @@ export function parseSubmission(body: Record<string, unknown>): SubmissionInput 
     tags,
     submitterName: clean(body.submitterName, 60),
     submitterEmail: clean(body.submitterEmail, 120).toLowerCase(),
+    authorQQ: clean(body.authorQQ, 20),
   };
   if (input.name.length < 2) throw new Error("请填写仓库名称");
   if (input.description.length < 12) throw new Error("仓库描述至少需要 12 个字");
@@ -40,5 +41,6 @@ export function parseSubmission(body: Record<string, unknown>): SubmissionInput 
   if (!tags.length) throw new Error("请至少填写一个标签");
   if (!input.submitterName) throw new Error("请填写联系人");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.submitterEmail)) throw new Error("请填写有效邮箱");
+  if (input.authorQQ && !/^[1-9]\d{4,11}$/.test(input.authorQQ)) throw new Error("请填写有效的作者 QQ 号");
   return input;
 }

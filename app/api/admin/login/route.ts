@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSessionToken, hasValidOrigin, sessionCookieOptions, verifyAdminPassword } from "@/lib/auth";
+import { createSessionToken, hasValidOrigin, sessionCookieOptions, verifyAdminCredentials } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
@@ -8,11 +8,15 @@ export async function POST(request: NextRequest) {
   if (!rateLimit(`login:${ip}`, 8, 15 * 60 * 1000)) {
     return NextResponse.json({ message: "尝试次数过多，请稍后再试" }, { status: 429 });
   }
-  const body = (await request.json()) as { password?: unknown };
-  if (typeof body.password !== "string" || !verifyAdminPassword(body.password)) {
-    return NextResponse.json({ message: "密码不正确" }, { status: 401 });
+  const body = (await request.json()) as { username?: unknown; password?: unknown };
+  if (typeof body.username !== "string" || typeof body.password !== "string") {
+    return NextResponse.json({ message: "请输入管理员账号和密码" }, { status: 400 });
+  }
+  const username = verifyAdminCredentials(body.username, body.password);
+  if (!username) {
+    return NextResponse.json({ message: "账号或密码不正确" }, { status: 401 });
   }
   const response = NextResponse.json({ ok: true });
-  response.cookies.set({ ...sessionCookieOptions(), value: createSessionToken() });
+  response.cookies.set({ ...sessionCookieOptions(), value: createSessionToken(username) });
   return response;
 }

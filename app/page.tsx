@@ -9,13 +9,11 @@ export default function HomePage() {
       <Header />
       <main className="intro-page">
         <section className="shell intro-main">
-          <div>
+          <div className="intro-lead">
             <span className="eyebrow">MAD PRODUCER PROJECT</span>
-            <h1><span>MAD Store</span><br />让好工具被创作者发现。</h1>
-          </div>
-          <div className="intro-copy">
+            <h1>为创作，找到合适的工具。</h1>
             <p>
-              MAD Store 是一个中文开源项目导航，为 MAD / AMV 个体开发者提供展示入口，也帮助创作者找到真正可用的工具与文档。
+              MAD Store 收集服务于 MAD / AMV 创作的开源项目。你可以在这里找到工具、脚本与文档，也可以把正在维护的项目分享给更多创作者。
             </p>
             <div className="intro-actions">
               <Link href="/projects">浏览项目 <ArrowRight size={17} /></Link>
@@ -23,10 +21,10 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-        <section className="shell intro-notes">
-          <div><span>01</span><p>仅收录公开的 GitHub 开源仓库。</p></div>
-          <div><span>02</span><p>项目由用户提交，管理员人工审核与分类。</p></div>
-          <div><span>03</span><p>DeepSeek 只提供初审建议，不自动发布。</p></div>
+        <section className="shell intro-guide" aria-label="站点功能">
+          <div><strong>发现</strong><p>按用途浏览适合创作流程的开源项目。</p></div>
+          <div><strong>了解</strong><p>直接查看仓库信息与完整 README。</p></div>
+          <div><strong>分享</strong><p>提交你开发或正在维护的项目。</p></div>
         </section>
       </main>
       <Footer />

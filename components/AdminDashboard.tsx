@@ -33,6 +33,7 @@ function ProjectEditor({
         description: form.get("description"),
         repoUrl: form.get("repoUrl"),
         authorUrl: form.get("authorUrl"),
+        authorQQ: form.get("authorQQ"),
         license: form.get("license"),
         category: form.get("category"),
         systems: form.getAll("systems"),
@@ -100,6 +101,10 @@ function ProjectEditor({
         <label className="full">
           作者主页
           <input name="authorUrl" defaultValue={project.authorUrl} type="url" required />
+        </label>
+        <label>
+          作者 QQ
+          <input name="authorQQ" defaultValue={project.authorQQ || ""} inputMode="numeric" />
         </label>
         <label>
           分类
