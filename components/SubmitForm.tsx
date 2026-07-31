@@ -39,7 +39,6 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
       submitterName: form.get("submitterName"),
       submitterEmail: form.get("submitterEmail"),
       contactQQ: form.get("contactQQ"),
-      downloadUrl: form.get("downloadUrl"),
       officialUrl: form.get("officialUrl"),
       companyWebsite: form.get("companyWebsite"),
     };
@@ -116,11 +115,7 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
             作者 GitHub 主页 <em>*</em>
             <input name="authorUrl" type="url" required placeholder="https://github.com/owner" />
           </label>
-          <label>
-            直链下载地址 <span className="optional">选填</span>
-            <input name="downloadUrl" type="url" placeholder="https://example.com/download" />
-          </label>
-          <label>
+          <label className="full">
             官网地址 <span className="optional">选填</span>
             <input name="officialUrl" type="url" placeholder="https://example.com" />
           </label>
