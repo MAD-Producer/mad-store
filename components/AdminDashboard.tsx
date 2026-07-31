@@ -29,6 +29,7 @@ function ProjectEditor({
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        slug: form.get("slug"),
         name: form.get("name"),
         description: form.get("description"),
         repoUrl: form.get("repoUrl"),
@@ -85,6 +86,16 @@ function ProjectEditor({
         <label>
           仓库名称
           <input name="name" defaultValue={project.name} required />
+        </label>
+        <label>
+          SEO Slug
+          <input
+            name="slug"
+            defaultValue={project.slug}
+            pattern="[a-z0-9\u4e00-\u9fff]+(?:-[a-z0-9\u4e00-\u9fff]+)*"
+            title="使用小写字母、数字、中文和连字符"
+            required
+          />
         </label>
         <label>
           开源协议

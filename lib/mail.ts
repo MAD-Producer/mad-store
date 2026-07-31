@@ -16,8 +16,11 @@ export async function notifyAdmin(input: SubmissionInput, projectId: string, aiR
   });
 
   const adminUrl = `${process.env.NEXT_PUBLIC_SITE_URL || ""}/admin`;
+  const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER;
   await transporter.sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    from: fromAddress
+      ? { name: process.env.SMTP_FROM_NAME || "MAD Store", address: fromAddress }
+      : undefined,
     to,
     subject: `【MAD Store】新项目待审核：${input.name}`,
     text: [

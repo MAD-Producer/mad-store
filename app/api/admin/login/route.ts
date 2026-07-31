@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSessionToken, hasValidOrigin, sessionCookieOptions, verifyAdminCredentials } from "@/lib/auth";
+import {
+  createSessionToken,
+  hasAdminSessionSecret,
+  hasValidOrigin,
+  sessionCookieOptions,
+  verifyAdminCredentials,
+} from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   if (!hasValidOrigin(request)) return NextResponse.json({ message: "请求来源无效" }, { status: 403 });
+  if (!hasAdminSessionSecret()) {
+    return NextResponse.json({ message: "管理员会话密钥尚未配置" }, { status: 503 });
+  }
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (!rateLimit(`login:${ip}`, 8, 15 * 60 * 1000)) {
     return NextResponse.json({ message: "尝试次数过多，请稍后再试" }, { status: 429 });

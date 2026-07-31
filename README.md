@@ -9,10 +9,11 @@ MAD Store 是面向 MAD / AMV 创作者与独立开发者的开源项目导航�
 ## 主要能力
 
 - 介绍、项目、提交三个公开页面
-- 按分类筛选和关键词搜索项目
-- 在站内渲染 GitHub README
+- 按关键词、分类、系统和标签多层筛选项目
+- 每个项目拥有独立的可编辑 slug、SEO 元信息和详情页
+- 在独立详情页渲染 GitHub README，并正确解析仓库内的相对链接与图片
 - 用户提交公开 GitHub 仓库及作者联系方式
-- 管理员修改项目名称、描述、仓库地址、协议、系统、标签和分类
+- 管理员修改项目 slug、名称、描述、仓库地址、协议、系统、标签和分类
 - 多管理员账号登录
 - 项目发布、拒绝与重新编辑
 - 管理员维护分类和可选标签
@@ -27,7 +28,8 @@ MAD Store 是面向 MAD / AMV 创作者与独立开发者的开源项目导航�
 | 路径 | 用途 |
 | --- | --- |
 | `/` | 站点介绍 |
-| `/projects` | 项目浏览、筛选和 README 阅读 |
+| `/projects` | 项目浏览与多层筛选 |
+| `/projects/:slug` | 项目详情、结构化信息和 README |
 | `/submit` | 项目提交表单 |
 | `/admin` | 管理员审核工作台，不参与搜索引擎收录 |
 | `/api/submit` | 接收项目提交 |
@@ -78,7 +80,7 @@ pnpm build
 | `NEXT_PUBLIC_SITE_URL` | 是 | 正式站点地址，用于 canonical、sitemap 和邮件中的后台链接 |
 | `MONGODB_URI` | 是 | MongoDB Atlas 连接字符串 |
 | `MONGODB_DB` | 是 | 数据库名称，推荐 `mad_store` |
-| `ADMIN_SESSION_SECRET` | 是 | 管理员 Session 的 HMAC 密钥，建议至少 32 个随机字符 |
+| `ADMIN_SESSION_SECRET` | 推荐 | 管理员 Session 的独立 HMAC 密钥，建议至少 32 个随机字符 |
 | `GITHUB_TOKEN` | 推荐 | 读取 GitHub 仓库信息和 README；不配置时容易遇到匿名请求限额 |
 
 ### 每个基础变量从哪里获得
@@ -112,6 +114,8 @@ openssl rand -hex 32
 ```
 
 把输出的完整字符串保存到 EdgeOne 的加密环境变量中。修改它会让现有管理员会话立即失效。
+
+为了兼容已经上线的早期部署，未配置该变量时会使用 `ADMIN_ACCOUNTS`（或旧版管理员账号与密码）作为签名材料，因此后台不会出现“登录接口成功但马上退出”的情况。生产环境仍建议配置独立密钥，便于单独轮换会话签名而不改管理员密码。
 
 #### `GITHUB_TOKEN`
 
@@ -154,16 +158,19 @@ node -e 'JSON.parse(process.argv[1]); console.log("JSON OK")' \
 ### SMTP 通知
 
 ```env
-SMTP_HOST=smtp.example.com
+SMTP_HOST=smtp.feishu.cn
 SMTP_PORT=465
 SMTP_SECURE=true
-SMTP_USER=mailer@example.com
-SMTP_PASS=app-password
-SMTP_FROM=MAD Store <mailer@example.com>
+SMTP_USER=store@madproducer.com
+SMTP_PASS=飞书公共邮箱的-IMAP-SMTP-密码
+SMTP_FROM=store@madproducer.com
+SMTP_FROM_NAME=MAD Store
 ADMIN_EMAILS=admin-a@example.com,admin-b@example.com
 ```
 
-`ADMIN_EMAILS` 支持使用英文逗号分隔多个收件人。SMTP 未配置时不会阻断项目提交。
+`ADMIN_EMAILS` 支持使用英文逗号分隔多个收件人。SMTP 未配置时不会阻断项目提交。飞书公共邮箱的 `SMTP_PASS` 是公共邮箱详情页显示的 IMAP/SMTP 密码，不是飞书账号登录密码。
+
+EdgeOne 环境变量编辑器不接受 `MAD Store <store@madproducer.com>` 这种带空格和尖括号的值，因此发件地址与显示名称必须分别填写到 `SMTP_FROM` 和 `SMTP_FROM_NAME`。
 
 获取 SMTP 配置的一般步骤：
 
@@ -177,6 +184,7 @@ ADMIN_EMAILS=admin-a@example.com,admin-b@example.com
 
 | 邮箱 | `SMTP_HOST` | 端口 | `SMTP_SECURE` | `SMTP_PASS` |
 | --- | --- | --- | --- | --- |
+| 飞书公共邮箱 | `smtp.feishu.cn` | `465` | `true` | 公共邮箱详情中的 IMAP/SMTP 密码 |
 | QQ 邮箱 | `smtp.qq.com` | `465` | `true` | QQ 邮箱生成的授权码 |
 | Gmail | `smtp.gmail.com` | `465` | `true` | 开启两步验证后生成的应用专用密码 |
 | Microsoft 365 | `smtp.office365.com` | `587` | `false` | 租户允许 SMTP AUTH 后使用的凭据 |
@@ -307,7 +315,8 @@ EdgeOne Pages Functions 当前没有可直接填写到 Atlas 的固定出口 IP 
 - 登录与提交接口带基础限流
 - 管理端写操作校验同源请求
 - README 使用 React Markdown 渲染，不执行仓库中的 HTML
-- README 远程图片不会直接载入，避免额外的跟踪和内容风险
+- README 只加载 HTTPS 图片；仓库内相对图片会转为 GitHub 原始文件外链
+- README 相对文档链接会转为对应 GitHub 仓库文件地址，不会误跳到本站目录
 - 联系邮箱和作者 QQ 只在管理员后台与通知邮件中使用
 - `.env.local` 与生产密钥不得提交到 Git
 
@@ -316,7 +325,8 @@ EdgeOne Pages Functions 当前没有可直接填写到 Atlas 的固定出口 IP 
 ```text
 app/
   page.tsx                 介绍页
-  projects/page.tsx        项目与 README
+  projects/page.tsx        项目总览与筛选
+  projects/[slug]/page.tsx 独立项目详情与 README
   submit/page.tsx          提交页
   admin/page.tsx           管理员工作台
   api/                     提交与管理接口

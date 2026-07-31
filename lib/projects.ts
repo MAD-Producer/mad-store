@@ -107,15 +107,23 @@ export async function createSubmission(
 
 export async function updateProject(
   id: string,
-  updates: Partial<Pick<Project, "name" | "description" | "repoUrl" | "authorUrl" | "authorQQ" | "license" | "systems" | "tags" | "category" | "status">>,
+  updates: Partial<Pick<Project, "slug" | "name" | "description" | "repoUrl" | "authorUrl" | "authorQQ" | "license" | "systems" | "tags" | "category" | "status">>,
 ) {
   if (!hasMongoConfig()) throw new Error("站点数据库尚未配置");
   const db = await getDatabase();
   const filter = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id };
   const allowed: Record<string, unknown> = {};
-  const keys = ["name", "description", "repoUrl", "authorUrl", "authorQQ", "license", "systems", "tags", "category", "status"] as const;
+  const keys = ["slug", "name", "description", "repoUrl", "authorUrl", "authorQQ", "license", "systems", "tags", "category", "status"] as const;
   for (const key of keys) if (updates[key] !== undefined) allowed[key] = updates[key];
-  if (typeof allowed.name === "string") allowed.slug = createSlug(allowed.name);
+  if (typeof allowed.slug === "string") {
+    if (!allowed.slug.trim()) throw new Error("slug 不能为空");
+    allowed.slug = createSlug(allowed.slug);
+    const duplicate = await db.collection("projects").findOne({
+      slug: allowed.slug,
+      _id: { $ne: ObjectId.isValid(id) ? new ObjectId(id) : new ObjectId() },
+    });
+    if (duplicate) throw new Error("这个 slug 已被其他项目使用");
+  }
   allowed.updatedAt = new Date();
   const result = await db.collection("projects").updateOne(filter, { $set: allowed });
   if (!result.matchedCount) throw new Error("未找到项目");

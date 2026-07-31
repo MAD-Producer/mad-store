@@ -19,6 +19,7 @@ export async function PATCH(
       ? [...new Set(body.tags.map(String).map((item) => item.trim()).filter(Boolean))].slice(0, 12)
       : [];
     await updateProject(id, {
+      slug: String(body.slug || "").trim().slice(0, 72),
       name: String(body.name || "").trim().slice(0, 80),
       description: String(body.description || "").trim().slice(0, 320),
       repoUrl: String(body.repoUrl || "").trim().slice(0, 300),

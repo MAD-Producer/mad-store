@@ -11,10 +11,24 @@ function safeEqual(a: string, b: string) {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
+function sessionSecret() {
+  const explicit = process.env.ADMIN_SESSION_SECRET?.trim();
+  if (explicit) return explicit;
+  const accounts = process.env.ADMIN_ACCOUNTS?.trim();
+  if (accounts) return accounts;
+  const password = process.env.ADMIN_PASSWORD;
+  if (password) return `${process.env.ADMIN_USERNAME || "admin"}:${password}`;
+  return "";
+}
+
 function signature(payload: string) {
-  const secret = process.env.ADMIN_SESSION_SECRET;
+  const secret = sessionSecret();
   if (!secret) return "";
   return createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+export function hasAdminSessionSecret() {
+  return Boolean(sessionSecret());
 }
 
 function adminAccounts() {
@@ -47,6 +61,9 @@ export function verifyAdminCredentials(username: string, password: string) {
 }
 
 export function createSessionToken(username: string) {
+  if (!hasAdminSessionSecret()) {
+    throw new Error("ADMIN_SESSION_SECRET is not configured");
+  }
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const identity = Buffer.from(username).toString("base64url");
   const payload = `${identity}.${timestamp}`;
