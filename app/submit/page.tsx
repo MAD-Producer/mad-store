@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/submit" },
 };
 
+// 表单选项由管理员维护，需要在请求时读取数据库，避免在部署构建阶段连接 Atlas。
+export const dynamic = "force-dynamic";
+
 export default async function SubmitPage() {
   const settings = await getSettings();
   return (
