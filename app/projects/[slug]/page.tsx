@@ -94,11 +94,7 @@ export default async function ProjectDetailPage({
   const project = await getProjectBySlug(slug);
   if (!project) notFound();
   const readme = project.readme || (await fetchReadme(project.repoUrl));
-  const downloads = project.downloads?.length
-    ? project.downloads
-    : project.downloadUrl
-      ? [{ label: "直接下载", url: project.downloadUrl }]
-      : [];
+  const downloads = project.downloads || [];
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareSourceCode",
@@ -180,22 +176,6 @@ export default async function ProjectDetailPage({
             <Star /><span>仓库信息</span>
             <strong>{typeof project.stars === "number" ? `${project.stars} Stars` : "公开仓库"}{project.language ? ` · ${project.language}` : ""}</strong>
           </div>
-          {!!downloads.length && (
-            <div>
-              <Download /><span>直链下载</span>
-              {downloads.length === 1 ? (
-                <a href={downloads[0].url} target="_blank" rel="noreferrer">{downloads[0].label}</a>
-              ) : (
-                <strong>{downloads.length} 个下载选项</strong>
-              )}
-            </div>
-          )}
-          {project.officialUrl && (
-            <div>
-              <Globe2 /><span>项目官网</span>
-              <a href={project.officialUrl} target="_blank" rel="noreferrer">访问项目官方网站</a>
-            </div>
-          )}
           {(project.customFields || []).map((field) => (
             <div key={`${field.label}-${field.value}`}>
               <Info /><span>{field.label}</span>
