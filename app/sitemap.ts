@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
 import { getPublishedProjects } from "@/lib/projects";
 
+export const revalidate = 300;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mad-store.edgeone.app";
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://store.madproducer.cn").replace(/\/+$/, "");
   const projects = await getPublishedProjects();
   return [
     { url: baseUrl, changeFrequency: "daily", priority: 1 },

@@ -23,13 +23,7 @@ function ProjectEditor({
   const [tags, setTags] = useState(project.tags);
   const [customTag, setCustomTag] = useState("");
   const [customFields, setCustomFields] = useState<ProjectCustomField[]>(project.customFields || []);
-  const [downloads, setDownloads] = useState<ProjectDownload[]>(
-    project.downloads?.length
-      ? project.downloads
-      : project.downloadUrl
-        ? [{ label: "直接下载", url: project.downloadUrl }]
-        : [],
-  );
+  const [downloads, setDownloads] = useState<ProjectDownload[]>(project.downloads || []);
 
   function toggleTag(tag: string) {
     setTags((current) =>

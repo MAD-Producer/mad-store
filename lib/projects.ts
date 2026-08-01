@@ -5,6 +5,15 @@ import { createSlug } from "./slug";
 import type { Project, ProjectStatus, SiteSettings, SubmissionInput } from "./types";
 
 function serializeProject(document: Document): Project {
+  const downloads = Array.isArray(document.downloads)
+    ? document.downloads.map((download) => ({
+        ...download,
+        label: download.label === "直接下载" ? "下载" : download.label,
+      }))
+    : document.downloadUrl
+      ? [{ label: "下载", url: document.downloadUrl }]
+      : [];
+
   return {
     id: document._id?.toString?.() || document.id || "",
     slug: document.slug,
@@ -23,11 +32,7 @@ function serializeProject(document: Document): Project {
     submitterName: document.submitterName,
     submitterEmail: document.submitterEmail,
     contactQQ: document.contactQQ || document.authorQQ,
-    downloads: Array.isArray(document.downloads)
-      ? document.downloads
-      : document.downloadUrl
-        ? [{ label: "直接下载", url: document.downloadUrl }]
-        : [],
+    downloads,
     downloadUrl: document.downloadUrl,
     officialUrl: document.officialUrl,
     customFields: Array.isArray(document.customFields) ? document.customFields : [],
@@ -76,6 +81,7 @@ export async function getSettings(): Promise<SiteSettings> {
 export async function createSubmission(
   input: SubmissionInput,
   enrichment: {
+    repositoryName: string;
     readme: string;
     stars: number;
     language?: string;
@@ -88,7 +94,7 @@ export async function createSubmission(
   if (!hasMongoConfig()) throw new Error("站点数据库尚未配置");
   const db = await getDatabase();
   const createdAt = new Date();
-  const baseSlug = createSlug(input.name);
+  const baseSlug = createSlug(enrichment.repositoryName);
   const existing = await db.collection("projects").findOne({ repoUrl: enrichment.canonicalRepoUrl });
   if (existing) throw new Error("这个仓库已经提交过了");
 
@@ -111,6 +117,12 @@ export async function createSubmission(
     createdAt,
     updatedAt: createdAt,
   });
+  if (input.tags.length) {
+    await db.collection("settings").updateOne(
+      { key: "site" },
+      { $addToSet: { tags: { $each: input.tags } } },
+    );
+  }
   return result.insertedId.toString();
 }
 
@@ -136,10 +148,18 @@ export async function updateProject(
     if (duplicate) throw new Error("这个 slug 已被其他项目使用");
   }
   allowed.updatedAt = new Date();
-  await db.collection("projects").updateOne(filter, { $set: allowed });
+  const replacesLegacyDownload = updates.downloads !== undefined;
+  await db.collection("projects").updateOne(
+    filter,
+    replacesLegacyDownload
+      ? { $set: allowed, $unset: { downloadUrl: "" } }
+      : { $set: allowed },
+  );
+  const updatedDocument = { ...existing, ...allowed };
+  if (replacesLegacyDownload) delete updatedDocument.downloadUrl;
   return {
     previous: serializeProject(existing),
-    updated: serializeProject({ ...existing, ...allowed }),
+    updated: serializeProject(updatedDocument),
   };
 }
 

@@ -61,6 +61,7 @@ export async function enrichSubmission(input: SubmissionInput) {
   const repo = await fetchRepository(input.repoUrl);
   const readme = await fetchReadme(input.repoUrl);
   return {
+    repositoryName: repo.name,
     readme,
     stars: repo.stargazers_count,
     language: repo.language || undefined,
