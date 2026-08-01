@@ -26,10 +26,11 @@ describe("sitemap", () => {
     expect(entries.map((entry) => entry.url)).toEqual([
       "https://store.madproducer.cn",
       "https://store.madproducer.cn/projects",
+      "https://store.madproducer.cn/websites",
       "https://store.madproducer.cn/submit",
       "https://store.madproducer.cn/projects/mad-toolbox",
     ]);
-    expect(entries[3]).toEqual(expect.objectContaining({
+    expect(entries[4]).toEqual(expect.objectContaining({
       lastModified: new Date("2026-07-31T00:00:00.000Z"),
       changeFrequency: "weekly",
       priority: 0.8,

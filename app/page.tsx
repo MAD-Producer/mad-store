@@ -13,11 +13,12 @@ export default function HomePage() {
             <span className="eyebrow"><i /> MAD PRODUCER PROJECT</span>
             <h1>为创作，找到合适的工具。</h1>
             <p>
-              MAD Store 收集服务于 MAD / AMV 创作的开源项目。你可以在这里找到工具、脚本与文档，也可以把正在维护的项目分享给更多创作者。
+              MAD Store 收集服务于 MAD / AMV 创作的开源项目与网站。你可以在这里找到工具、脚本、文档与站点，也可以把值得被看见的内容分享给更多创作者。
             </p>
             <div className="intro-actions">
               <Link href="/projects">浏览项目 <ArrowRight size={17} /></Link>
-              <Link href="/submit">提交项目</Link>
+              <Link href="/websites">浏览网站</Link>
+              <Link href="/submit">我要投稿</Link>
             </div>
           </div>
           <div className="intro-motif" aria-hidden="true">
@@ -29,9 +30,9 @@ export default function HomePage() {
           </div>
         </section>
         <section className="shell intro-guide" aria-label="站点功能">
-          <div><span>01</span><strong>发现</strong><p>按用途浏览适合创作流程的开源项目。</p></div>
+          <div><span>01</span><strong>发现</strong><p>浏览适合创作流程的开源项目与网站。</p></div>
           <div><span>02</span><strong>了解</strong><p>直接查看仓库信息与完整 README。</p></div>
-          <div><span>03</span><strong>分享</strong><p>提交你开发或正在维护的项目。</p></div>
+          <div><span>03</span><strong>分享</strong><p>提交你正在维护的项目或推荐的网站。</p></div>
         </section>
       </main>
       <Footer />

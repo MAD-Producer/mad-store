@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import type { Project, SubmissionInput } from "./types";
+import type { Project, SubmissionInput, Website, WebsiteSubmissionInput } from "./types";
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => ({
@@ -196,6 +196,95 @@ export async function notifySubmitterStatus(project: Project) {
         : `感谢提交。管理员完成审核后，决定暂不收录「${project.name}」。`,
       content: infoRows(rows),
       action: published ? { label: "查看项目页面", url: projectUrl } : { label: "联系 MAD Store", url: "mailto:store@madproducer.com" },
+    }),
+  });
+}
+
+export async function notifyAdminWebsite(input: WebsiteSubmissionInput, websiteId: string) {
+  const transporter = mailTransport();
+  const to = process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL;
+  if (!transporter || !to) return;
+  const adminUrl = `${(process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "")}/admin`;
+  const rows: Array<[string, string]> = [
+    ["网站", input.name],
+    ["链接", input.url],
+    ["介绍", input.description],
+    ["分类", input.category || "未填写"],
+    ["标签", input.tags.join("、") || "未填写"],
+    ["联系人", input.submitterName || "未填写"],
+    ["联系邮箱", input.submitterEmail || "未填写"],
+    ["联系人 QQ", input.contactQQ || "未填写"],
+    ["记录 ID", websiteId],
+  ];
+  await transporter.sendMail({
+    from: fromAddress(),
+    to,
+    subject: `【MAD Store】新网站待审核：${input.name}`,
+    text: [
+      ...rows.map(([label, value]) => `${label}：${value}`),
+      `审核入口：${adminUrl}`,
+    ].join("\n"),
+    html: emailShell({
+      eyebrow: "NEW WEBSITE",
+      title: "有新网站等待审核",
+      intro: "网站投稿已写入 MAD Store，请登录审核工作台核对。",
+      content: infoRows(rows),
+      action: { label: "前往审核工作台", url: adminUrl },
+    }),
+  });
+}
+
+export async function notifyWebsiteSubmitterReceived(input: WebsiteSubmissionInput, websiteId: string) {
+  const transporter = mailTransport();
+  if (!transporter || !input.submitterEmail) return;
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://store.madproducer.cn").replace(/\/$/, "");
+  await transporter.sendMail({
+    from: fromAddress(),
+    to: input.submitterEmail,
+    subject: `【MAD Store】已收到网站投稿：${input.name}`,
+    text: `我们已经收到网站「${input.name}」，当前正在等待人工审核。\n网站：${input.url}\n记录 ID：${websiteId}`,
+    html: emailShell({
+      eyebrow: "SUBMITTED",
+      title: "网站已经提交",
+      intro: `我们已经收到「${input.name}」，当前正在等待人工审核。`,
+      content: infoRows([
+        ["当前状态", "已提交 · 等待人工审核"],
+        ["网站", input.name],
+        ["链接", input.url],
+        ["记录 ID", websiteId],
+      ]),
+      action: { label: "浏览 MAD Store", url: `${siteUrl}/websites` },
+    }),
+  });
+}
+
+export async function notifyWebsiteSubmitterStatus(website: Website) {
+  const transporter = mailTransport();
+  if (!transporter || !website.submitterEmail) return;
+  const published = website.status === "published";
+  if (!published && website.status !== "rejected") return;
+  const reason = website.rejectionReason || "本次审核暂未通过，欢迎完善后再次联系我们。";
+  const rows: Array<[string, string]> = [
+    ["审核结果", published ? "已收录" : "未收录"],
+    ["网站", website.name],
+    ["链接", website.url],
+  ];
+  if (!published) rows.push(["拒绝理由", reason]);
+  await transporter.sendMail({
+    from: fromAddress(),
+    to: website.submitterEmail,
+    subject: `【MAD Store】${website.name} ${published ? "已被收录" : "审核未通过"}`,
+    text: published
+      ? `你提交的网站「${website.name}」已被 MAD Store 收录。`
+      : `你提交的网站「${website.name}」本次未被收录。\n拒绝理由：${reason}`,
+    html: emailShell({
+      eyebrow: published ? "PUBLISHED" : "REVIEW RESULT",
+      title: published ? "网站已被收录" : "网站本次未被收录",
+      intro: published
+        ? `感谢提交，「${website.name}」已经出现在 MAD Store 的网站列表中。`
+        : `管理员完成审核后，决定暂不收录「${website.name}」。`,
+      content: infoRows(rows),
+      action: published ? { label: "访问网站", url: website.url } : undefined,
     }),
   });
 }

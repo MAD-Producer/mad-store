@@ -5,8 +5,8 @@ import { SubmitForm } from "@/components/SubmitForm";
 import { getSettings } from "@/lib/projects";
 
 export const metadata: Metadata = {
-  title: "提交开源项目",
-  description: "向 MAD Store 提交面向 MAD / AMV 创作者的公开 GitHub 开源项目。",
+  title: "投稿",
+  description: "向 MAD Store 提交开源项目或值得推荐的网站。",
   alternates: { canonical: "/submit" },
 };
 
@@ -21,8 +21,8 @@ export default async function SubmitPage() {
       <main className="submit-page">
         <section className="shell page-heading">
           <span className="eyebrow">SUBMIT</span>
-          <h1>提交项目</h1>
-          <p>把值得被更多人看见的开源项目告诉我们。</p>
+          <h1>投稿</h1>
+          <p>把值得被更多人看见的开源项目或网站告诉我们。</p>
         </section>
         <section className="shell simple-submit">
           <SubmitForm settings={settings} />

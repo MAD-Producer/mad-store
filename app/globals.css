@@ -147,6 +147,9 @@ button { cursor: pointer; }
 .markdown-body img { display: block; max-width: min(100%, 520px); max-height: 200px; height: auto; margin: 16px auto; border-radius: 7px; object-fit: contain; }
 
 .simple-submit { max-width: 700px; margin-inline: auto; padding-top: 40px; }
+.submission-kind { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; padding: 5px; border: 1px solid var(--line); border-radius: 9px; background: #f1f1ef; }
+.submission-kind button { height: 40px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 650; }
+.submission-kind button.active { background: var(--white); color: var(--ink); box-shadow: 0 1px 4px rgba(35,34,30,.08); }
 .submit-form { padding: 0 34px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); }
 .submit-form fieldset { margin: 0; padding: 38px 0; border: 0; border-bottom: 1px solid var(--line); }
 .submit-form legend { width: 100%; color: var(--ink); font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
@@ -221,6 +224,10 @@ button { cursor: pointer; }
 .admin-top { display: flex; justify-content: space-between; align-items: center; }
 .admin-top h1 { margin: 9px 0 0; color: var(--ink); font-size: 30px; }
 .admin-top > button { display: flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 6px; background: white; padding: 8px 11px; font-size: 9px; }
+.admin-content-switch { display: flex; gap: 6px; margin-top: 24px; }
+.admin-content-switch button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.55); color: var(--muted); font-size: 9px; }
+.admin-content-switch button.active { border-color: var(--ink); background: var(--ink); color: var(--white); }
+.admin-content-switch button span { min-width: 18px; padding: 2px 5px; border-radius: 999px; background: rgba(127,127,127,.16); text-align: center; font-size: 8px; }
 .admin-stats { display: grid; grid-template-columns: repeat(3,1fr); margin: 28px 0 20px; background: white; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .admin-stats div { padding: 17px 22px; border-right: 1px solid var(--line); }
 .admin-stats div:last-child { border: 0; }
@@ -242,6 +249,19 @@ button { cursor: pointer; }
 .review-list-heading { min-height: 45px; display: flex; align-items: center; justify-content: space-between; }
 .review-list-heading h2 { margin: 0; color: var(--ink); font-size: 19px; }
 .review-list-heading span { color: var(--muted); font-size: 9px; }
+.admin-list-table { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--white); }
+.admin-list-header, .admin-list-row { display: grid; grid-template-columns: minmax(170px,1.45fr) 90px minmax(120px,1fr) 100px 64px; align-items: center; gap: 14px; }
+.admin-list-header { min-height: 38px; padding: 0 16px; border-bottom: 1px solid var(--line); background: var(--soft); color: var(--faint); font-size: 8px; font-weight: 700; letter-spacing: .04em; }
+.admin-list-item { border-bottom: 1px solid var(--line); }
+.admin-list-item:last-child { border-bottom: 0; }
+.admin-list-item.expanded { background: #fafaf8; }
+.admin-list-row { min-height: 54px; padding: 0 16px; }
+.admin-list-row > strong { overflow: hidden; color: var(--ink); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.admin-list-row > span, .admin-list-row > a, .admin-list-row > time { overflow: hidden; color: var(--muted); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.admin-list-row .status { font-style: normal; }
+.admin-list-row a:hover { color: var(--brand); }
+.admin-list-row button { border: 0; background: transparent; color: var(--brand); padding: 6px 0; font-size: 9px; }
+.admin-list-item > .review-card { margin: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: #fafaf8; }
 .review-card { padding: 21px; margin-bottom: 14px; }
 .review-heading { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 .review-heading h3 { margin: 7px 0 3px; color: var(--ink); font-size: 18px; }
@@ -299,6 +319,8 @@ button { cursor: pointer; }
   .form-grid .full, .admin-form-grid .full { grid-column: auto; }
   .admin-layout { grid-template-columns: 1fr; }
   .admin-layout > aside { position: static; display: grid; grid-template-columns: 1fr 1fr; }
+  .admin-list-header, .admin-list-row { grid-template-columns: minmax(150px,1fr) 82px 82px 54px; }
+  .admin-list-header > :nth-child(3), .admin-list-row > :nth-child(3) { display: none; }
 }
 
 @media (max-width: 560px) {
@@ -334,6 +356,8 @@ button { cursor: pointer; }
   .review-heading { flex-direction: column; }
   .review-actions { flex-wrap: wrap; }
   .review-actions button.publish { margin-left: 0; }
+  .admin-list-header, .admin-list-row { grid-template-columns: minmax(120px,1fr) 76px 48px; gap: 8px; padding-inline: 12px; }
+  .admin-list-header > :nth-child(4), .admin-list-row > :nth-child(4) { display: none; }
   .admin-custom-row { grid-template-columns: 1fr; }
   .admin-custom-row > button { width: 100%; height: 32px; }
   .admin-contact-card { grid-template-columns: 1fr; }

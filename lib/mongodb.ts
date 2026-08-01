@@ -36,12 +36,15 @@ let initialized = false;
 async function initialize(db: Db) {
   if (initialized) return;
   const projects = db.collection("projects");
+  const websites = db.collection("websites");
   const settings = db.collection("settings");
   await Promise.all([
     projects.createIndex({ slug: 1 }, { unique: true }),
     projects.createIndex({ status: 1, category: 1, updatedAt: -1 }),
     projects.createIndex({ repoUrl: 1 }, { unique: true }),
     projects.createIndex({ tags: 1 }),
+    websites.createIndex({ url: 1 }, { unique: true }),
+    websites.createIndex({ status: 1, updatedAt: -1 }),
   ]);
 
   await settings.updateOne(
