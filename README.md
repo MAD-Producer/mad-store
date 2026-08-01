@@ -1,6 +1,6 @@
 # MAD Store
 
-MAD Store 是面向 MAD / AMV 创作者与独立开发者的开源项目导航。它把分散在 GitHub 的工具、脚本、下载器、转码方案和文档集中到一个易于查找、阅读和提交的站点中。
+MAD Store 是面向 MAD / AMV 创作者与独立开发者的开源项目与网站导航。它把分散的工具、脚本、转码方案、文档和站点集中到一个易于查找、阅读和投稿的入口中。
 
 线上地址：[store.madproducer.cn](https://store.madproducer.cn)
 
@@ -10,17 +10,19 @@ MAD Store 是面向 MAD / AMV 创作者与独立开发者的开源项目导航�
 
 ## 主要能力
 
-- 介绍、项目、提交三个公开页面
+- 介绍、项目、网站、投稿四个公开页面
 - 按关键词、分类、系统和标签多层筛选项目
 - 每个项目拥有独立的可编辑 slug、SEO 元信息和详情页
 - 在独立详情页渲染 GitHub README，并正确解析仓库内的相对链接
 - GitHub 图片通过带域名白名单、体积限制和缓存策略的本站代理加载
 - 用户提交公开 GitHub 仓库及作者联系方式
+- 用户仅用名称、HTTPS 链接和介绍即可提交网站，其他信息均为选填
 - 常见开源协议提供用途说明，也可从 GitHub 自动识别或选择“其他协议”手动填写
 - 管理员修改项目 slug、名称、描述、仓库地址、直链下载、协议、系统、标签和分类
 - 每个项目可添加版本号、文件大小、文档地址等自定义展示字段
 - 多管理员账号登录
-- 项目发布、拒绝与重新编辑
+- 项目与网站发布、拒绝与重新编辑
+- 类 WordPress 的后台投稿列表，默认收起并仅展开当前编辑项
 - 管理员维护分类和可选标签
 - MongoDB Atlas 持久化
 - SMTP 同时通知管理员和联系人，覆盖已提交、已收录与被拒绝状态
@@ -36,14 +38,18 @@ MAD Store 是面向 MAD / AMV 创作者与独立开发者的开源项目导航�
 | `/` | 站点介绍 |
 | `/projects` | 项目浏览与多层筛选 |
 | `/projects/:slug` | 项目详情、结构化信息和 README |
-| `/submit` | 项目提交表单 |
+| `/websites` | 已审核网站列表 |
+| `/submit` | 项目与网站投稿表单 |
 | `/admin` | 管理员审核工作台，不参与搜索引擎收录 |
 | `/api/submit` | 接收项目提交 |
+| `/api/websites` | 接收网站投稿 |
 | `/api/github-image` | 受限代理并缓存 GitHub README 图片 |
 | `/api/admin/login` | 管理员登录 |
 | `/api/admin/logout` | 管理员退出 |
 | `/api/admin/projects` | 获取全部待审与已发布项目 |
 | `/api/admin/projects/:id` | 修改信息、分类和审核状态 |
+| `/api/admin/websites` | 获取全部网站投稿 |
+| `/api/admin/websites/:id` | 修改网站信息和审核状态 |
 | `/api/admin/settings` | 管理分类与标签 |
 
 ## 技术栈
@@ -246,7 +252,7 @@ EdgeOne Pages Functions 当前没有可直接填写到 Atlas 的固定出口 IP 
 
 应用首次连接数据库时会自动完成以下初始化：
 
-- 创建 `projects`、`settings` 集合
+- 创建 `projects`、`websites`、`settings` 集合
 - 创建仓库地址和 slug 的唯一索引
 - 写入默认分类与标签
 - 写入 `MAD-Toolbox`、`MAD-DOC` 两个初始项目
@@ -326,6 +332,8 @@ EdgeOne Pages Functions 当前没有可直接填写到 Atlas 的固定出口 IP 
 8. 状态变化后，联系人会收到“已收录”或包含拒绝理由的邮件。
 9. 只有 `published` 状态的项目会出现在项目页。
 
+网站投稿使用独立的 `websites` 集合和审核列表。网站名称、HTTPS 链接和介绍为必填项；分类、标签与联系方式均为选填。审核通过后才会出现在 `/websites`。
+
 ## 安全设计
 
 - 管理员 Session 使用 HttpOnly、SameSite=Strict Cookie
@@ -348,7 +356,8 @@ app/
   page.tsx                 介绍页
   projects/page.tsx        项目总览与筛选
   projects/[slug]/page.tsx 独立项目详情与 README
-  submit/page.tsx          提交页
+  websites/page.tsx        已收录网站
+  submit/page.tsx          项目与网站投稿页
   admin/page.tsx           管理员工作台
   api/                     提交、图片代理与管理接口
 components/
@@ -362,10 +371,10 @@ lib/
   auth.ts                  多管理员认证与 Session
   mongodb.ts               Atlas 连接与索引初始化
   projects.ts              项目和站点设置读写
+  websites.ts              网站投稿读写
   github.ts                GitHub 仓库信息与 README
   licenses.ts              常见开源协议选项与说明
   ai.ts                    DeepSeek 初审
-  mail.ts                  管理员与联系人状态邮件
   mail.ts                  SMTP 通知
   validation.ts            提交数据校验
 ```

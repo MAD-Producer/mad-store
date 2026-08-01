@@ -1,4 +1,4 @@
-import type { SubmissionInput, SystemName } from "./types";
+import type { SubmissionInput, SystemName, WebsiteSubmissionInput } from "./types";
 
 function clean(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -53,5 +53,31 @@ export function parseSubmission(body: Record<string, unknown>): SubmissionInput 
   if (!input.submitterName) throw new Error("请填写联系人");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.submitterEmail)) throw new Error("请填写有效邮箱");
   if (input.contactQQ && !/^[1-9]\d{4,11}$/.test(input.contactQQ)) throw new Error("请填写有效的联系人 QQ 号");
+  return input;
+}
+
+export function parseWebsiteSubmission(body: Record<string, unknown>): WebsiteSubmissionInput {
+  const tags = Array.isArray(body.tags)
+    ? [...new Set(body.tags.map((tag) => clean(tag, 24)).filter(Boolean))].slice(0, 8)
+    : [];
+  const input: WebsiteSubmissionInput = {
+    name: clean(body.name, 80),
+    url: clean(body.url, 500),
+    description: clean(body.description, 320),
+    category: clean(body.category, 40) || undefined,
+    tags,
+    submitterName: clean(body.submitterName, 60) || undefined,
+    submitterEmail: clean(body.submitterEmail, 120).toLowerCase() || undefined,
+    contactQQ: clean(body.contactQQ, 20) || undefined,
+  };
+  if (!input.name) throw new Error("请填写网站名称");
+  if (!validHttpUrl(input.url)) throw new Error("请填写有效的 HTTPS 网站链接");
+  if (!input.description) throw new Error("请填写网站介绍");
+  if (input.submitterEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.submitterEmail)) {
+    throw new Error("请填写有效邮箱");
+  }
+  if (input.contactQQ && !/^[1-9]\d{4,11}$/.test(input.contactQQ)) {
+    throw new Error("请填写有效的联系人 QQ 号");
+  }
   return input;
 }

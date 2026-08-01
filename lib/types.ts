@@ -57,6 +57,22 @@ export interface SiteSettings {
   tags: string[];
 }
 
+export interface Website {
+  id: string;
+  name: string;
+  url: string;
+  description: string;
+  category?: string;
+  tags: string[];
+  status: ProjectStatus;
+  submitterName?: string;
+  submitterEmail?: string;
+  contactQQ?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SubmissionInput {
   name: string;
   description: string;
@@ -69,4 +85,15 @@ export interface SubmissionInput {
   submitterEmail: string;
   contactQQ?: string;
   officialUrl?: string;
+}
+
+export interface WebsiteSubmissionInput {
+  name: string;
+  url: string;
+  description: string;
+  category?: string;
+  tags: string[];
+  submitterName?: string;
+  submitterEmail?: string;
+  contactQQ?: string;
 }

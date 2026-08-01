@@ -5,7 +5,7 @@ import { FormEvent, useRef, useState } from "react";
 import { LicenseSelector } from "@/components/LicenseSelector";
 import type { SiteSettings } from "@/lib/types";
 
-export function SubmitForm({ settings }: { settings: SiteSettings }) {
+function ProjectSubmitForm({ settings }: { settings: SiteSettings }) {
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -228,5 +228,210 @@ export function SubmitForm({ settings }: { settings: SiteSettings }) {
       </button>
       <p className="form-note">提交后，我们会读取公开仓库信息与 README，并通过邮箱同步审核状态。</p>
     </form>
+  );
+}
+
+function WebsiteSubmitForm({ settings }: { settings: SiteSettings }) {
+  const [tags, setTags] = useState<string[]>([]);
+  const [customTag, setCustomTag] = useState("");
+  const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+  const submitting = useRef(false);
+
+  function toggleTag(tag: string) {
+    setTags((current) =>
+      current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag].slice(0, 8),
+    );
+  }
+
+  function addCustomTag() {
+    const value = customTag.trim().slice(0, 24);
+    if (value && !tags.includes(value)) setTags((current) => [...current, value].slice(0, 8));
+    setCustomTag("");
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
+    setState("loading");
+    setMessage("");
+    const formElement = event.currentTarget;
+    try {
+      const form = new FormData(formElement);
+      const response = await fetch("/api/websites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.get("name"),
+          url: form.get("url"),
+          description: form.get("description"),
+          category: form.get("category"),
+          tags,
+          submitterName: form.get("submitterName"),
+          submitterEmail: form.get("submitterEmail"),
+          contactQQ: form.get("contactQQ"),
+          companyWebsite: form.get("companyWebsite"),
+        }),
+      });
+      const data = (await response.json()) as { message?: string };
+      if (!response.ok) throw new Error(data.message || "提交失败，请稍后重试");
+      setState("success");
+      setMessage(data.message || "网站已提交");
+      formElement.reset();
+      setTags([]);
+    } catch (error) {
+      setState("error");
+      setMessage(error instanceof Error ? error.message : "提交失败，请稍后重试");
+    } finally {
+      submitting.current = false;
+    }
+  }
+
+  if (state === "success") {
+    return (
+      <div className="form-success" role="status">
+        <span><Check size={26} aria-hidden="true" /></span>
+        <h2>网站提交成功</h2>
+        <p>{message}。如果填写了联系邮箱，审核结果会通过邮件同步。</p>
+        <button type="button" onClick={() => setState("idle")}>再提交一个网站</button>
+      </div>
+    );
+  }
+
+  return (
+    <form className="submit-form" onSubmit={submit}>
+      <input
+        name="companyWebsite"
+        className="honeypot"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+      />
+      <fieldset>
+        <legend>网站信息</legend>
+        <p className="fieldset-note">只有网站名称、网站链接和网站介绍是必填项。</p>
+        <div className="form-grid">
+          <label>
+            网站名称 <em>*</em>
+            <input name="name" required maxLength={80} placeholder="例如：MAD Producer" />
+          </label>
+          <label>
+            网站分类 <span className="optional">选填</span>
+            <input name="category" maxLength={40} placeholder="例如：创作社区" />
+          </label>
+          <label className="full">
+            网站链接 <em>*</em>
+            <input name="url" type="url" required placeholder="https://example.com" />
+          </label>
+          <label className="full">
+            网站介绍 <em>*</em>
+            <textarea
+              name="description"
+              required
+              maxLength={320}
+              rows={5}
+              placeholder="简要介绍网站的内容、用途和适合的访问者"
+            />
+          </label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>分类与标签 <span className="optional">选填</span></legend>
+        <p className="fieldset-note">选填标签可以帮助访问者更快了解网站。</p>
+        <div className="selectable-tags">
+          {settings.tags.map((tag) => (
+            <button
+              type="button"
+              key={tag}
+              className={tags.includes(tag) ? "active" : ""}
+              onClick={() => toggleTag(tag)}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+        <div className="custom-tag">
+          <input
+            value={customTag}
+            onChange={(event) => setCustomTag(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                addCustomTag();
+              }
+            }}
+            maxLength={24}
+            placeholder="自定义标签"
+          />
+          <button type="button" onClick={addCustomTag} aria-label="添加自定义标签">
+            <Plus size={18} />
+          </button>
+        </div>
+        {!!tags.length && (
+          <div className="selected-tags">
+            {tags.map((tag) => (
+              <button type="button" key={tag} onClick={() => toggleTag(tag)}>
+                {tag}<X size={13} />
+              </button>
+            ))}
+          </div>
+        )}
+      </fieldset>
+      <fieldset>
+        <legend>联系方式 <span className="optional">选填</span></legend>
+        <p className="fieldset-note">如果需要接收审核结果，请留下联系邮箱。</p>
+        <div className="form-grid">
+          <label>
+            联系人 <span className="optional">选填</span>
+            <input name="submitterName" maxLength={60} placeholder="你的称呼" />
+          </label>
+          <label>
+            联系邮箱 <span className="optional">选填</span>
+            <input name="submitterEmail" type="email" placeholder="用于审核沟通" />
+          </label>
+          <label className="full">
+            联系人 QQ <span className="optional">选填</span>
+            <input name="contactQQ" inputMode="numeric" pattern="[1-9][0-9]{4,11}" maxLength={12} />
+          </label>
+        </div>
+      </fieldset>
+      {state === "error" && <p className="form-error" role="alert">{message}</p>}
+      <button className="submit-button" type="submit" disabled={state === "loading"}>
+        {state === "loading" ? (
+          <><LoaderCircle className="spin" size={19} />正在提交网站</>
+        ) : "提交网站"}
+      </button>
+      <p className="form-note">提交后会进入人工审核，只有审核通过的网站会公开展示。</p>
+    </form>
+  );
+}
+
+export function SubmitForm({ settings }: { settings: SiteSettings }) {
+  const [kind, setKind] = useState<"project" | "website">("project");
+  return (
+    <div className="submission-surface">
+      <div className="submission-kind" role="tablist" aria-label="选择投稿类型">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={kind === "project"}
+          className={kind === "project" ? "active" : ""}
+          onClick={() => setKind("project")}
+        >
+          开源项目
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={kind === "website"}
+          className={kind === "website" ? "active" : ""}
+          onClick={() => setKind("website")}
+        >
+          网站
+        </button>
+      </div>
+      {kind === "project" ? <ProjectSubmitForm settings={settings} /> : <WebsiteSubmitForm settings={settings} />}
+    </div>
   );
 }

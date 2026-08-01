@@ -17,7 +17,8 @@ export function Header() {
         <nav className="main-nav" aria-label="主导航">
           <Link href="/">介绍</Link>
           <Link href="/projects">项目</Link>
-          <Link href="/submit">提交项目</Link>
+          <Link href="/websites">网站</Link>
+          <Link href="/submit">投稿</Link>
         </nav>
       </div>
     </header>
