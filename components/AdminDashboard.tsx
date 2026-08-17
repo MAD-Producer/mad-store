@@ -3,7 +3,8 @@
 import { FormEvent, useState } from "react";
 import { CheckCircle2, LogOut, Plus, Save, Sparkles, X, XCircle } from "lucide-react";
 import { LicenseSelector } from "@/components/LicenseSelector";
-import type { Project, ProjectCustomField, ProjectDownload, ProjectStatus, SiteSettings, Website } from "@/lib/types";
+import { buildProxyDownloadUrl } from "@/lib/proxy-downloads";
+import type { Project, ProjectCustomField, ProjectDownload, ProjectProxyDownload, ProjectStatus, SiteSettings, Website } from "@/lib/types";
 
 function splitList(value: string) {
   return [...new Set(value.split(/[,，\n]/).map((item) => item.trim()).filter(Boolean))];
@@ -24,6 +25,7 @@ function ProjectEditor({
   const [customTag, setCustomTag] = useState("");
   const [customFields, setCustomFields] = useState<ProjectCustomField[]>(project.customFields || []);
   const [downloads, setDownloads] = useState<ProjectDownload[]>(project.downloads || []);
+  const [proxyDownloads, setProxyDownloads] = useState<ProjectProxyDownload[]>(project.proxyDownloads || []);
 
   function toggleTag(tag: string) {
     setTags((current) =>
@@ -45,6 +47,14 @@ function ProjectEditor({
 
   function updateDownload(index: number, key: keyof ProjectDownload, value: string) {
     setDownloads((current) =>
+      current.map((download, downloadIndex) =>
+        downloadIndex === index ? { ...download, [key]: value } : download,
+      ),
+    );
+  }
+
+  function updateProxyDownload(index: number, key: keyof ProjectProxyDownload, value: string) {
+    setProxyDownloads((current) =>
       current.map((download, downloadIndex) =>
         downloadIndex === index ? { ...download, [key]: value } : download,
       ),
@@ -82,6 +92,12 @@ function ProjectEditor({
             url: download.url.trim(),
           }))
           .filter((download) => download.label && download.url),
+        proxyDownloads: proxyDownloads
+          .map((download) => ({
+            label: download.label.trim(),
+            sourceUrl: download.sourceUrl.trim(),
+          }))
+          .filter((download) => download.label && download.sourceUrl),
         customFields: customFields
           .map((field) => ({
             label: field.label.trim(),
@@ -267,6 +283,56 @@ function ProjectEditor({
               type="button"
               aria-label={`删除下载选项 ${index + 1}`}
               onClick={() => setDownloads((current) => current.filter((_, downloadIndex) => downloadIndex !== index))}
+            >
+              <X size={15} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="admin-custom-fields admin-proxy-downloads">
+        <div className="admin-custom-heading">
+          <div>
+            <strong>本站代理下载</strong>
+            <p>仅管理员手动添加。登记 /releases 这类目录后，会代理其页面、文件和下级下载请求，不会代理整个站点。</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setProxyDownloads((current) => [...current, { label: "", sourceUrl: "" }].slice(0, 12))}
+          >
+            <Plus size={14} /> 添加代理范围
+          </button>
+        </div>
+        {proxyDownloads.map((download, index) => (
+          <div className="admin-proxy-download-row" key={index}>
+            <input
+              value={download.label}
+              onChange={(event) => updateProxyDownload(index, "label", event.target.value)}
+              placeholder="显示名称，例如 Release 下载"
+              maxLength={40}
+            />
+            <input
+              value={download.sourceUrl}
+              onChange={(event) => updateProxyDownload(index, "sourceUrl", event.target.value)}
+              placeholder="代理范围，例如 https://github.com/.../releases"
+              type="url"
+            />
+            {download.sourceUrl.trim() ? (
+              <a
+                className="admin-proxy-preview"
+                href={buildProxyDownloadUrl(download.sourceUrl.trim())}
+                target="_blank"
+                rel="noreferrer"
+                title={buildProxyDownloadUrl(download.sourceUrl.trim())}
+              >
+                {buildProxyDownloadUrl(download.sourceUrl.trim())}
+              </a>
+            ) : (
+              <span className="admin-proxy-preview">保存后生成</span>
+            )}
+            <button
+              type="button"
+              aria-label={`删除本站代理范围 ${index + 1}`}
+              onClick={() => setProxyDownloads((current) => current.filter((_, downloadIndex) => downloadIndex !== index))}
             >
               <X size={15} />
             </button>

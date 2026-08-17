@@ -23,6 +23,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { fetchReadme } from "@/lib/github";
 import { describeLicense } from "@/lib/licenses";
+import { buildProxyDownloadUrl } from "@/lib/proxy-downloads";
 import { getProjectBySlug } from "@/lib/projects";
 
 export const revalidate = 300;
@@ -95,6 +96,11 @@ export default async function ProjectDetailPage({
   if (!project) notFound();
   const readme = project.readme || (await fetchReadme(project.repoUrl));
   const downloads = project.downloads || [];
+  const proxyDownloads = project.proxyDownloads || [];
+  const proxyLinks = proxyDownloads.map((download) => ({
+    ...download,
+    url: buildProxyDownloadUrl(download.sourceUrl),
+  }));
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareSourceCode",
@@ -104,7 +110,7 @@ export default async function ProjectDetailPage({
     license: project.license,
     operatingSystem: project.systems,
     programmingLanguage: project.language,
-    downloadUrl: downloads.map((download) => download.url),
+    downloadUrl: [...downloads.map((download) => download.url), ...proxyLinks.map((download) => download.url)],
     url: project.officialUrl,
     author: { "@type": "Person", url: project.authorUrl },
   };
@@ -134,6 +140,30 @@ export default async function ProjectDetailPage({
                   </button>
                   <div className="download-menu-list" role="menu">
                     {downloads.map((download) => (
+                      <a key={`${download.label}-${download.url}`} href={download.url} target="_blank" rel="noreferrer" role="menuitem">
+                        <span>{download.label}</span><ExternalLink size={12} />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {proxyLinks.length === 1 && (
+                <a
+                  className={downloads.length ? "repo-button" : "repo-button primary"}
+                  href={proxyLinks[0].url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Download size={17} /> 本站代理 · {proxyLinks[0].label} <ExternalLink size={13} />
+                </a>
+              )}
+              {proxyLinks.length > 1 && (
+                <div className="download-menu">
+                  <button className={downloads.length ? "repo-button" : "repo-button primary"} type="button" aria-haspopup="menu">
+                    <Download size={17} /> 本站代理下载 <ChevronDown size={13} />
+                  </button>
+                  <div className="download-menu-list" role="menu">
+                    {proxyLinks.map((download) => (
                       <a key={`${download.label}-${download.url}`} href={download.url} target="_blank" rel="noreferrer" role="menuitem">
                         <span>{download.label}</span><ExternalLink size={12} />
                       </a>
