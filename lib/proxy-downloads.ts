@@ -1,6 +1,10 @@
 const DEFAULT_SITE_URL = "https://store.madproducer.cn";
 const MAX_PROXY_SOURCE_URL_LENGTH = 2_000;
 
+// EdgeOne Cloud Functions limits an individual request/response body to 6 MiB.
+// Leave headroom for headers and the platform wrapper instead of using the hard limit.
+export const PROXY_DOWNLOAD_CHUNK_SIZE = 4 * 1024 * 1024;
+
 function hostnameIsLocal(hostname: string) {
   const clean = hostname.replace(/^\[|\]$/g, "").toLowerCase();
   if (
@@ -93,6 +97,19 @@ export function proxySourceMatchesScope(candidateUrl: string, scopeUrl: string) 
     const candidatePath = normalizedPath(candidate.pathname);
     const scopePath = normalizedPath(scope.pathname);
     return candidatePath === scopePath || candidatePath.startsWith(`${scopePath}/`);
+  } catch {
+    return false;
+  }
+}
+
+/** 判断一个源地址是否更像文件下载，而不是需要改写的 HTML 页面。 */
+export function isLikelyDownloadPath(sourceUrl: string) {
+  try {
+    const pathname = new URL(sourceUrl).pathname;
+    return (
+      /\/releases\/download(?:\/|$)/i.test(pathname) ||
+      /\.[a-z0-9]{1,12}$/i.test(pathname)
+    );
   } catch {
     return false;
   }

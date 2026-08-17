@@ -3,6 +3,7 @@ import {
   buildProxyDownloadUrl,
   extractProxySourceUrl,
   hasProxyScope,
+  isLikelyDownloadPath,
   normalizeProxySourceUrl,
   proxySourceMatchesScope,
 } from "./proxy-downloads";
@@ -33,6 +34,13 @@ describe("proxy download scopes", () => {
       "https://github.com/other-project/releases/download/v1.0/file.zip",
       releasesUrl,
     )).toBe(false);
+  });
+
+  it("recognizes release assets without treating the release page as a file", () => {
+    expect(isLikelyDownloadPath(
+      "https://github.com/MAD-Producer/MAD-Toolbox/releases/download/v1.0/MAD-Toolbox.zip",
+    )).toBe(true);
+    expect(isLikelyDownloadPath(releasesUrl)).toBe(false);
   });
 
   it("recovers a source URL from the unencoded proxy path", () => {
