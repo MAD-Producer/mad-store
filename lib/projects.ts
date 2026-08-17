@@ -1,8 +1,9 @@
 import { ObjectId, type Document } from "mongodb";
 import { getDatabase, hasMongoConfig } from "./mongodb";
+import { proxySourceMatchesScope } from "./proxy-downloads";
 import { defaultSettings, seedProjects } from "./seed";
 import { createSlug } from "./slug";
-import type { Project, ProjectStatus, SiteSettings, SubmissionInput } from "./types";
+import type { Project, ProjectProxyDownload, ProjectStatus, SiteSettings, SubmissionInput } from "./types";
 
 function serializeProject(document: Document): Project {
   const downloads = Array.isArray(document.downloads)
@@ -13,6 +14,14 @@ function serializeProject(document: Document): Project {
     : document.downloadUrl
       ? [{ label: "下载", url: document.downloadUrl }]
       : [];
+  const proxyDownloads: ProjectProxyDownload[] = Array.isArray(document.proxyDownloads)
+    ? document.proxyDownloads
+        .map((download) => ({
+          label: String(download.label || "").trim(),
+          sourceUrl: String(download.sourceUrl || "").trim(),
+        }))
+        .filter((download) => download.label && download.sourceUrl)
+    : [];
 
   return {
     id: document._id?.toString?.() || document.id || "",
@@ -34,6 +43,7 @@ function serializeProject(document: Document): Project {
     contactQQ: document.contactQQ || document.authorQQ,
     downloads,
     downloadUrl: document.downloadUrl,
+    proxyDownloads,
     officialUrl: document.officialUrl,
     customFields: Array.isArray(document.customFields) ? document.customFields : [],
     rejectionReason: document.rejectionReason,
@@ -66,6 +76,26 @@ export async function getAllProjects() {
   const db = await getDatabase();
   const documents = await db.collection("projects").find({}).sort({ createdAt: -1 }).toArray();
   return documents.map(serializeProject);
+}
+
+export async function findPublishedProxyDownload(sourceUrl: string) {
+  if (!hasMongoConfig()) return null;
+  const db = await getDatabase();
+  const documents = await db.collection("projects").find(
+    { status: "published", proxyDownloads: { $exists: true } },
+    { projection: { proxyDownloads: 1 } },
+  ).toArray();
+  for (const document of documents) {
+    if (!Array.isArray(document.proxyDownloads)) continue;
+    const match = document.proxyDownloads.find(
+      (download: { sourceUrl?: unknown }) =>
+        typeof download.sourceUrl === "string" && proxySourceMatchesScope(sourceUrl, download.sourceUrl),
+    );
+    if (match && typeof match.sourceUrl === "string") {
+      return { label: String(match.label || "本站代理下载"), sourceUrl: match.sourceUrl };
+    }
+  }
+  return null;
 }
 
 export async function getSettings(): Promise<SiteSettings> {
@@ -128,7 +158,7 @@ export async function createSubmission(
 
 export async function updateProject(
   id: string,
-  updates: Partial<Pick<Project, "slug" | "name" | "description" | "repoUrl" | "authorUrl" | "contactQQ" | "license" | "systems" | "tags" | "category" | "status" | "downloads" | "officialUrl" | "customFields" | "rejectionReason">>,
+  updates: Partial<Pick<Project, "slug" | "name" | "description" | "repoUrl" | "authorUrl" | "contactQQ" | "license" | "systems" | "tags" | "category" | "status" | "downloads" | "proxyDownloads" | "officialUrl" | "customFields" | "rejectionReason">>,
 ) {
   if (!hasMongoConfig()) throw new Error("站点数据库尚未配置");
   const db = await getDatabase();
@@ -136,7 +166,7 @@ export async function updateProject(
   const allowed: Record<string, unknown> = {};
   const existing = await db.collection("projects").findOne(filter);
   if (!existing) throw new Error("未找到项目");
-  const keys = ["slug", "name", "description", "repoUrl", "authorUrl", "contactQQ", "license", "systems", "tags", "category", "status", "downloads", "officialUrl", "customFields", "rejectionReason"] as const;
+  const keys = ["slug", "name", "description", "repoUrl", "authorUrl", "contactQQ", "license", "systems", "tags", "category", "status", "downloads", "proxyDownloads", "officialUrl", "customFields", "rejectionReason"] as const;
   for (const key of keys) if (updates[key] !== undefined) allowed[key] = updates[key];
   if (typeof allowed.slug === "string") {
     if (!allowed.slug.trim()) throw new Error("slug 不能为空");

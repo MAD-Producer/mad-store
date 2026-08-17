@@ -12,6 +12,12 @@ export interface ProjectDownload {
   url: string;
 }
 
+/** 由管理员手动登记的本站代理范围。sourceUrl 及其子路径都会被代理。 */
+export interface ProjectProxyDownload {
+  label: string;
+  sourceUrl: string;
+}
+
 export interface AIReview {
   score: number;
   summary: string;
@@ -44,6 +50,7 @@ export interface Project {
   downloads?: ProjectDownload[];
   /** 兼容早期版本中的单下载地址。 */
   downloadUrl?: string;
+  proxyDownloads?: ProjectProxyDownload[];
   officialUrl?: string;
   customFields?: ProjectCustomField[];
   rejectionReason?: string;
