@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PROXY_DOWNLOAD_CHUNK_SIZE } from "@/lib/proxy-downloads";
 
 const dependencies = vi.hoisted(() => ({
   findPublishedProxyDownload: vi.fn(),
@@ -63,6 +64,44 @@ describe("release proxy route", () => {
     expect(String(fetchMock.mock.calls[0][0])).toBe(releaseAssetUrl);
     expect(String(fetchMock.mock.calls[1][0])).toBe("https://objects.githubusercontent.com/assets/MAD-Toolbox.zip");
     expect(fetchMock.mock.calls[0][1]?.headers.get("range")).toBe("bytes=0-4");
+  });
+
+  it("caps an oversized range before sending it upstream", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("asset", {
+      status: 206,
+      headers: {
+        "content-length": "5",
+        "content-range": "bytes 0-4/5",
+        "content-type": "application/zip",
+      },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET(request(releaseAssetUrl, { range: "bytes=0-99999999" }));
+
+    expect(response.status).toBe(206);
+    expect(fetchMock.mock.calls[0][1]?.headers.get("range")).toBe(
+      `bytes=0-${PROXY_DOWNLOAD_CHUNK_SIZE - 1}`,
+    );
+  });
+
+  it("redirects a large direct download to the browser chunk downloader", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, {
+      status: 200,
+      headers: {
+        "content-disposition": "attachment; filename=MAD-Toolbox.zip",
+        "content-length": String(PROXY_DOWNLOAD_CHUNK_SIZE + 1),
+        "content-type": "application/zip",
+      },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET(request(releaseAssetUrl));
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toContain("/download-proxy?target=");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][1]?.method).toBe("HEAD");
   });
 
   it("rewrites only links that stay inside the registered release scope", async () => {
