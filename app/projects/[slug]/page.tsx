@@ -149,17 +149,17 @@ export default async function ProjectDetailPage({
               )}
               {proxyLinks.length === 1 && (
                 <a
-                  className={downloads.length ? "repo-button" : "repo-button primary"}
+                  className="repo-button primary"
                   href={proxyLinks[0].url}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <Download size={17} /> 国内下载 · {proxyLinks[0].label} <ExternalLink size={13} />
+                  <Download size={17} /> 国内下载 <ExternalLink size={13} />
                 </a>
               )}
               {proxyLinks.length > 1 && (
                 <div className="download-menu">
-                  <button className={downloads.length ? "repo-button" : "repo-button primary"} type="button" aria-haspopup="menu">
+                  <button className="repo-button primary" type="button" aria-haspopup="menu">
                     <Download size={17} /> 国内下载 <ChevronDown size={13} />
                   </button>
                   <div className="download-menu-list" role="menu">

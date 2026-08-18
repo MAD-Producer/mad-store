@@ -4,6 +4,11 @@
   "buildCommand": "pnpm run build",
   "outputDirectory": ".next",
   "nodeVersion": "22.11.0",
+  "cloudFunctions": {
+    "nodejs": {
+      "maxDuration": 120
+    }
+  },
   "mainlandRegions": ["ap-shanghai"],
   "overseasRegions": ["ap-singapore"]
 }
