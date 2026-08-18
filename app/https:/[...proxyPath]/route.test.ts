@@ -35,6 +35,8 @@ describe("release proxy route", () => {
     const response = await GET(request("https://github.com/MAD-Producer/MAD-Toolbox/releases-other/file.zip"));
 
     expect(response.status).toBe(404);
+    expect(response.headers.get("content-type")).toContain("text/html");
+    expect(await response.text()).toContain("该页面不在国内下载范围内");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

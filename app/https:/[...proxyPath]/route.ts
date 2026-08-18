@@ -79,6 +79,43 @@ function proxyError(message: string, status: 404 | 502 | 503) {
   );
 }
 
+function proxyScopeNotFound() {
+  const body = `<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>页面不在国内下载范围内｜MAD Store</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; color: #2b2b2b; background: #fafaf8; }
+      body { min-height: 100vh; box-sizing: border-box; display: grid; place-items: center; margin: 0; padding: 24px; }
+      main { width: min(560px, 100%); box-sizing: border-box; padding: 48px 42px; border: 1px solid #e7e7e5; border-radius: 14px; background: #fff; text-align: center; box-shadow: 0 18px 50px rgba(35,34,30,.07); }
+      strong { display: block; color: #e85f4a; font-size: 72px; line-height: 1; }
+      h1 { margin: 22px 0 12px; color: #171717; font-size: clamp(24px, 5vw, 34px); letter-spacing: -.04em; }
+      p { margin: 0; color: #737373; font-size: 13px; line-height: 1.8; }
+      a { display: inline-flex; margin-top: 26px; padding: 11px 15px; border-radius: 7px; background: #171717; color: #fff; font-size: 11px; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <strong>404</strong>
+      <h1>该页面不在国内下载范围内</h1>
+      <p>当前页面未被管理员登记，暂不提供国内下载。请返回上一级继续浏览。</p>
+      <a href="/">回到 MAD Store</a>
+    </main>
+  </body>
+</html>`;
+  return new NextResponse(body, {
+    status: 404,
+    headers: {
+      "Cache-Control": "no-store",
+      "Content-Type": "text/html; charset=utf-8",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
+}
+
 function rewriteScopedHtmlLinks(html: string, currentUrl: string, scopeUrl: string, proxyOrigin: string) {
   return html.replace(
     /(\b(?:href|src|action)\s*=\s*)(["'])([^"']+)(\2)/gi,
@@ -166,7 +203,7 @@ async function handleProxyRequest(request: NextRequest, method: "GET" | "HEAD") 
     console.error("Proxy scope lookup failed", error);
     return proxyError("下载服务暂时不可用", 503);
   }
-  if (!configuredProxy) return proxyError("这个地址没有被管理员登记为国内下载范围", 404);
+  if (!configuredProxy) return proxyScopeNotFound();
 
   try {
     const hasRange = Boolean(request.headers.get("range"));
