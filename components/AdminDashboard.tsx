@@ -292,14 +292,14 @@ function ProjectEditor({
       <div className="admin-custom-fields admin-proxy-downloads">
         <div className="admin-custom-heading">
           <div>
-            <strong>本站代理下载</strong>
-            <p>仅管理员手动添加。登记 /releases 这类目录后，会代理其页面、文件和下级下载请求，不会代理整个站点。</p>
+            <strong>国内下载</strong>
+            <p>仅管理员手动添加。登记 /releases 这类目录后，会为该目录下的页面、文件和下级下载请求提供国内下载，不会覆盖整个站点。</p>
           </div>
           <button
             type="button"
             onClick={() => setProxyDownloads((current) => [...current, { label: "", sourceUrl: "" }].slice(0, 12))}
           >
-            <Plus size={14} /> 添加代理范围
+            <Plus size={14} /> 添加国内下载范围
           </button>
         </div>
         {proxyDownloads.map((download, index) => (
@@ -313,7 +313,7 @@ function ProjectEditor({
             <input
               value={download.sourceUrl}
               onChange={(event) => updateProxyDownload(index, "sourceUrl", event.target.value)}
-              placeholder="代理范围，例如 https://github.com/.../releases"
+              placeholder="国内下载范围，例如 https://github.com/.../releases"
               type="url"
             />
             {download.sourceUrl.trim() ? (
@@ -331,7 +331,7 @@ function ProjectEditor({
             )}
             <button
               type="button"
-              aria-label={`删除本站代理范围 ${index + 1}`}
+              aria-label={`删除国内下载范围 ${index + 1}`}
               onClick={() => setProxyDownloads((current) => current.filter((_, downloadIndex) => downloadIndex !== index))}
             >
               <X size={15} />

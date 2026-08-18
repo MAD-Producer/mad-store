@@ -12,7 +12,7 @@ export interface ProjectDownload {
   url: string;
 }
 
-/** 由管理员手动登记的本站代理范围。sourceUrl 及其子路径都会被代理。 */
+/** 由管理员手动登记的国内下载范围。sourceUrl 及其子路径都会提供下载。 */
 export interface ProjectProxyDownload {
   label: string;
   sourceUrl: string;

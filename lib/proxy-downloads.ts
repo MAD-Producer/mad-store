@@ -52,19 +52,19 @@ export function normalizeProxySourceUrl(value: unknown) {
   const clean = String(value || "").trim();
   if (!clean) return "";
   if (clean.length > MAX_PROXY_SOURCE_URL_LENGTH) {
-    throw new Error("本站代理地址不能超过 2000 个字符");
+    throw new Error("国内下载地址不能超过 2000 个字符");
   }
 
   let url: URL;
   try {
     url = new URL(clean);
   } catch {
-    throw new Error("本站代理地址必须是有效的 HTTPS 地址");
+    throw new Error("国内下载地址必须是有效的 HTTPS 地址");
   }
   if (!isSafeProxyTarget(url.toString())) {
-    throw new Error("本站代理地址必须是公开的 HTTPS 地址，且不能包含账号信息");
+    throw new Error("国内下载地址必须是公开的 HTTPS 地址，且不能包含账号信息");
   }
-  // Fragment 不会随 HTTP 请求发送，去掉它可以避免生成一个永远无法匹配的代理地址。
+  // Fragment 不会随 HTTP 请求发送，去掉它可以避免生成一个永远无法匹配的下载地址。
   url.hash = "";
   return url.toString();
 }
@@ -115,7 +115,7 @@ export function isLikelyDownloadPath(sourceUrl: string) {
   }
 }
 
-/** 生成类似 https://store.madproducer.cn/https://github.com/... 的本站代理地址。 */
+/** 生成类似 https://store.madproducer.cn/https://github.com/... 的国内下载地址。 */
 export function buildProxyDownloadUrl(sourceUrl: string, siteUrl = process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_SITE_URL) {
   return `${siteUrl.replace(/\/+$/, "")}/${sourceUrl.replace(/^\/+/, "")}`;
 }

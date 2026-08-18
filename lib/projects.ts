@@ -92,7 +92,7 @@ export async function findPublishedProxyDownload(sourceUrl: string) {
         typeof download.sourceUrl === "string" && proxySourceMatchesScope(sourceUrl, download.sourceUrl),
     );
     if (match && typeof match.sourceUrl === "string") {
-      return { label: String(match.label || "本站代理下载"), sourceUrl: match.sourceUrl };
+      return { label: String(match.label || "国内下载"), sourceUrl: match.sourceUrl };
     }
   }
   return null;

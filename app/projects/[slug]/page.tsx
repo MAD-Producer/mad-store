@@ -154,13 +154,13 @@ export default async function ProjectDetailPage({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <Download size={17} /> 本站代理 · {proxyLinks[0].label} <ExternalLink size={13} />
+                  <Download size={17} /> 国内下载 · {proxyLinks[0].label} <ExternalLink size={13} />
                 </a>
               )}
               {proxyLinks.length > 1 && (
                 <div className="download-menu">
                   <button className={downloads.length ? "repo-button" : "repo-button primary"} type="button" aria-haspopup="menu">
-                    <Download size={17} /> 本站代理下载 <ChevronDown size={13} />
+                    <Download size={17} /> 国内下载 <ChevronDown size={13} />
                   </button>
                   <div className="download-menu-list" role="menu">
                     {proxyLinks.map((download) => (
@@ -239,7 +239,7 @@ export default async function ProjectDetailPage({
                     if (!resolved) return null;
                     const displayUrl = imageSource(resolved);
                     if (!displayUrl) return null;
-                    // GitHub 图片由本站受限代理转发，其他 HTTPS 图片保留原地址。
+                    // GitHub 图片由受限转发服务加载，其他 HTTPS 图片保留原地址。
                     // eslint-disable-next-line @next/next/no-img-element
                     return <img src={displayUrl} alt={alt || "项目图片"} loading="lazy" referrerPolicy="no-referrer" />;
                   },
