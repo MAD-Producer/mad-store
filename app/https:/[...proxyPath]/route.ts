@@ -157,16 +157,16 @@ function contentLength(response: Response) {
 
 async function handleProxyRequest(request: NextRequest, method: "GET" | "HEAD") {
   const sourceUrl = extractProxySourceUrl(request.nextUrl.pathname, request.nextUrl.search);
-  if (!sourceUrl) return proxyError("代理地址无效", 404);
+  if (!sourceUrl) return proxyError("下载地址无效", 404);
 
   let configuredProxy;
   try {
     configuredProxy = await findPublishedProxyDownload(sourceUrl);
   } catch (error) {
     console.error("Proxy scope lookup failed", error);
-    return proxyError("代理服务暂时不可用", 503);
+    return proxyError("下载服务暂时不可用", 503);
   }
-  if (!configuredProxy) return proxyError("这个地址没有被管理员登记为本站代理范围", 404);
+  if (!configuredProxy) return proxyError("这个地址没有被管理员登记为国内下载范围", 404);
 
   try {
     const hasRange = Boolean(request.headers.get("range"));
@@ -216,7 +216,7 @@ async function handleProxyRequest(request: NextRequest, method: "GET" | "HEAD") 
     });
   } catch (error) {
     console.error("Proxy request failed", error);
-    return proxyError("代理请求失败，请稍后重试", 502);
+    return proxyError("下载请求失败，请稍后重试", 502);
   }
 }
 

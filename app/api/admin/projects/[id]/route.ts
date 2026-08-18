@@ -65,7 +65,7 @@ export async function PATCH(
             const download = item && typeof item === "object" ? item as Record<string, unknown> : {};
             const sourceUrl = normalizeProxySourceUrl(download.sourceUrl);
             if (sourceUrl && !hasProxyScope(sourceUrl)) {
-              throw new Error("本站代理链接必须指向具体目录，不能代理整个站点");
+              throw new Error("国内下载链接必须指向具体目录，不能覆盖整个站点");
             }
             return {
               label: String(download.label || "").trim().slice(0, 40),

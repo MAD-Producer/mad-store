@@ -78,7 +78,7 @@ function resolveTarget(rawTarget: string) {
 
 async function inspectTarget(target: string, signal: AbortSignal): Promise<DownloadFileInfo> {
   const head = await fetch(target, { method: "HEAD", cache: "no-store", signal });
-  if (!head.ok) throw new Error(`代理返回了 ${head.status}，暂时无法下载`);
+  if (!head.ok) throw new Error(`下载服务返回了 ${head.status}，暂时无法下载`);
 
   let total = Number(head.headers.get("content-length")) || 0;
   let contentDisposition = head.headers.get("content-disposition");
@@ -289,7 +289,7 @@ export function DownloadProxyClient({ target: rawTarget }: { target: string }) {
   return (
     <main className="download-proxy-page">
       <section className="download-proxy-card" aria-live="polite">
-        <span className="eyebrow"><i />本站分片下载</span>
+        <span className="eyebrow"><i />国内分片下载</span>
         <h1>{fileInfo?.filename || "准备下载"}</h1>
         <p className="download-proxy-description">
           大文件会拆成多个 4 MiB 分片，并行请求后直接写入本地文件，避免单次请求超过平台限制。
