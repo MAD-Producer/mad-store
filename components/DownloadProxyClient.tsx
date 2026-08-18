@@ -175,11 +175,11 @@ export function DownloadProxyClient({ target: rawTarget }: { target: string }) {
       .then((info) => {
         if (disposed) return;
         setFileInfo(info);
-        setStatus("文件已准备好，可以开始分片下载");
+        setStatus("文件已准备好，可以开始下载");
       })
-      .catch((reason: unknown) => {
+      .catch(() => {
         if (disposed || controller.signal.aborted) return;
-        setError(reason instanceof Error ? reason.message : "无法读取文件信息");
+        setError("暂时无法开始下载，请稍后重试");
         setStatus("下载准备失败");
       });
     return () => {
@@ -200,7 +200,7 @@ export function DownloadProxyClient({ target: rawTarget }: { target: string }) {
       setCompleted(false);
       setError("");
       setProgress(0);
-      setStatus("正在准备分片下载…");
+      setStatus("正在准备下载…");
 
       const picker = (window as PickerWindow).showSaveFilePicker;
       if (picker) {
@@ -259,7 +259,7 @@ export function DownloadProxyClient({ target: rawTarget }: { target: string }) {
       setProgress(100);
       setCompleted(true);
       setStatus("下载完成");
-    } catch (reason) {
+    } catch {
       if (writer) {
         try {
           await writer.abort?.();
@@ -270,7 +270,7 @@ export function DownloadProxyClient({ target: rawTarget }: { target: string }) {
       if (controller.signal.aborted) {
         setStatus("下载已取消");
       } else {
-        setError(reason instanceof Error ? reason.message : "分片下载失败，请重试");
+        setError("下载失败，请稍后重试");
         setStatus("下载失败");
       }
     } finally {
@@ -289,10 +289,10 @@ export function DownloadProxyClient({ target: rawTarget }: { target: string }) {
   return (
     <main className="download-proxy-page">
       <section className="download-proxy-card" aria-live="polite">
-        <span className="eyebrow"><i />国内分片下载</span>
+        <span className="eyebrow"><i />国内下载</span>
         <h1>{fileInfo?.filename || "准备下载"}</h1>
         <p className="download-proxy-description">
-          大文件会拆成多个 4 MiB 分片，并行请求后直接写入本地文件，避免单次请求超过平台限制。
+          请点击下方按钮开始下载。
         </p>
         <div className="download-proxy-meta">
           <span>文件大小</span>
@@ -313,7 +313,7 @@ export function DownloadProxyClient({ target: rawTarget }: { target: string }) {
             disabled={busy || !target || Boolean(error && !fileInfo)}
             onClick={startDownload}
           >
-            {completed ? "再次下载" : busy ? "正在分片下载…" : "开始分片下载"}
+            {completed ? "再次下载" : busy ? "正在下载…" : "开始下载"}
           </button>
           {busy ? (
             <button className="download-proxy-cancel" type="button" onClick={cancelDownload}>
@@ -322,7 +322,7 @@ export function DownloadProxyClient({ target: rawTarget }: { target: string }) {
           ) : null}
         </div>
         <p className="download-proxy-note">
-          Chrome、Edge 等现代浏览器会优先直接写入你选择的文件；不支持时将使用浏览器内存合并下载。
+          下载过程中请保持页面打开。
         </p>
       </section>
     </main>

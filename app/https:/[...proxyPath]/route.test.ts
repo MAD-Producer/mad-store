@@ -106,6 +106,35 @@ describe("release proxy route", () => {
     expect(fetchMock.mock.calls[0][1]?.method).toBe("HEAD");
   });
 
+  it("renders GitHub release pages from the releases API", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify([{
+      tag_name: "v1.0",
+      name: "MAD Toolbox 1.0",
+      published_at: "2026-01-02T00:00:00Z",
+      body: "首个稳定版本",
+      assets: [{
+        name: "MAD-Toolbox.zip",
+        size: 5,
+        browser_download_url: releaseAssetUrl,
+      }],
+    }]), {
+      headers: { "content-type": "application/json" },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET(request("https://github.com/MAD-Producer/MAD-Toolbox/releases"));
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/html");
+    expect(html).toContain("MAD Toolbox 1.0");
+    expect(html).toContain("国内下载");
+    expect(html).toContain("https://store.example/https://github.com/MAD-Producer/MAD-Toolbox/releases/download/v1.0/MAD-Toolbox.zip");
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      "https://api.github.com/repos/MAD-Producer/MAD-Toolbox/releases?per_page=30",
+    );
+  });
+
   it("rewrites only links that stay inside the registered release scope", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(
       '<a href="https://github.com/MAD-Producer/MAD-Toolbox/releases/download/v1.0/file.zip">下载</a><a href="https://github.com/MAD-Producer/MAD-Toolbox/issues">Issues</a>',
@@ -113,7 +142,7 @@ describe("release proxy route", () => {
     ));
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await GET(request("https://github.com/MAD-Producer/MAD-Toolbox/releases"));
+    const response = await GET(request("https://github.com/MAD-Producer/MAD-Toolbox/releases/notes"));
     const html = await response.text();
 
     expect(html).toContain("https://store.example/https://github.com/MAD-Producer/MAD-Toolbox/releases/download/v1.0/file.zip");

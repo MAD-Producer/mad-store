@@ -4,7 +4,7 @@ import { DownloadProxyClient } from "@/components/DownloadProxyClient";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "分片下载",
+  title: "国内下载",
   robots: { index: false, follow: false },
 };
 

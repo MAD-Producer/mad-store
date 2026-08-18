@@ -192,6 +192,158 @@ function contentLength(response: Response) {
   return Number.isSafeInteger(length) && length >= 0 ? length : null;
 }
 
+type GithubReleasePage = {
+  owner: string;
+  repo: string;
+  tag: string | null;
+};
+
+function parseGithubReleasePage(sourceUrl: string): GithubReleasePage | null {
+  try {
+    const url = new URL(sourceUrl);
+    if (url.hostname !== "github.com") return null;
+    const parts = url.pathname.split("/").filter(Boolean);
+    if (parts.length === 3 && parts[2] === "releases") {
+      return { owner: parts[0], repo: parts[1], tag: null };
+    }
+    if (parts.length >= 5 && parts[2] === "releases" && parts[3] === "tag") {
+      return {
+        owner: parts[0],
+        repo: parts[1],
+        tag: decodeURIComponent(parts.slice(4).join("/")),
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function escapeHtml(value: unknown) {
+  return stringValue(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function formatReleaseAssetSize(value: unknown) {
+  const size = typeof value === "number" && Number.isFinite(value) ? value : 0;
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${Math.round(size / 1024)} KiB`;
+  if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MiB`;
+  return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GiB`;
+}
+
+async function fetchGithubReleases(page: GithubReleasePage) {
+  const repository = `${encodeURIComponent(page.owner)}/${encodeURIComponent(page.repo)}`;
+  const endpoint = page.tag
+    ? `https://api.github.com/repos/${repository}/releases/tags/${encodeURIComponent(page.tag)}`
+    : `https://api.github.com/repos/${repository}/releases?per_page=30`;
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "MAD-Store-Download-Proxy",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+  const token = process.env.GITHUB_TOKEN?.trim();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(endpoint, {
+    headers,
+    cache: "no-store",
+    signal: AbortSignal.timeout(12_000),
+  });
+  if (!response.ok) throw new Error(`GitHub Releases API returned ${response.status}`);
+  const payload: unknown = await response.json();
+  const values = Array.isArray(payload) ? payload : [payload];
+  return values.filter(
+    (value): value is Record<string, unknown> => isRecord(value) && value.draft !== true,
+  );
+}
+
+function releasePageHtml(
+  page: GithubReleasePage,
+  releases: Record<string, unknown>[],
+  scopeUrl: string,
+  proxyOrigin: string,
+) {
+  const releaseCards = releases.map((release) => {
+    const tag = stringValue(release.tag_name);
+    const name = stringValue(release.name) || tag || "未命名版本";
+    const publishedAt = stringValue(release.published_at).slice(0, 10);
+    const body = stringValue(release.body).slice(0, 6_000);
+    const tagSourceUrl = `https://github.com/${page.owner}/${page.repo}/releases/tag/${encodeURIComponent(tag)}`;
+    const tagUrl = tag
+      ? buildProxyDownloadUrl(tagSourceUrl, proxyOrigin)
+      : "#";
+    const assets = Array.isArray(release.assets) ? release.assets.filter(isRecord) : [];
+    const assetLinks = assets.map((asset) => {
+      const sourceAssetUrl = stringValue(asset.browser_download_url);
+      try {
+        const normalizedAssetUrl = normalizeProxySourceUrl(sourceAssetUrl);
+        if (!proxySourceMatchesScope(normalizedAssetUrl, scopeUrl)) return "";
+        const href = buildProxyDownloadUrl(normalizedAssetUrl, proxyOrigin);
+        return `<li><a href="${escapeHtml(href)}">${escapeHtml(asset.name || "下载文件")}</a><span>${escapeHtml(formatReleaseAssetSize(asset.size))}</span></li>`;
+      } catch {
+        return "";
+      }
+    }).filter(Boolean).join("");
+
+    return `<article class="release-card">
+      <h2><a href="${escapeHtml(tagUrl)}">${escapeHtml(name)}</a></h2>
+      <p class="release-meta">${escapeHtml(tag)}${publishedAt ? ` · ${escapeHtml(publishedAt)}` : ""}</p>
+      ${body ? `<p class="release-body">${escapeHtml(body).replaceAll("\n", "<br>")}</p>` : ""}
+      ${assetLinks ? `<ul class="release-assets">${assetLinks}</ul>` : '<p class="release-empty">这个版本暂时没有可下载文件。</p>'}
+    </article>`;
+  }).join("");
+  const backUrl = buildProxyDownloadUrl(`https://github.com/${page.owner}/${page.repo}/releases`, proxyOrigin);
+  return `<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>国内下载 · ${escapeHtml(page.owner)}/${escapeHtml(page.repo)}</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; color: #2b2b2b; background: #fafaf8; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #fafaf8; }
+      main { width: min(900px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0 80px; }
+      .back { color: #737373; font-size: 12px; text-decoration: none; }
+      h1 { margin: 26px 0 28px; color: #171717; font-size: clamp(28px, 5vw, 48px); letter-spacing: -.05em; }
+      .release-card { margin-top: 16px; padding: 25px; border: 1px solid #e7e7e5; border-radius: 12px; background: #fff; }
+      h2 { margin: 0; font-size: 20px; }
+      h2 a, .release-assets a { color: #171717; text-decoration: none; }
+      h2 a:hover, .release-assets a:hover { color: #e85f4a; }
+      .release-meta { margin: 8px 0 0; color: #a3a3a3; font-size: 11px; }
+      .release-body { margin: 18px 0 0; color: #737373; font-size: 12px; line-height: 1.75; white-space: normal; overflow-wrap: anywhere; }
+      .release-assets { display: grid; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; }
+      .release-assets li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 12px; border-radius: 7px; background: #f4f4f2; font-size: 11px; }
+      .release-assets span, .release-empty { color: #a3a3a3; font-size: 10px; }
+      .release-empty { margin: 20px 0 0; }
+    </style>
+  </head>
+  <body><main><a class="back" href="${escapeHtml(backUrl)}">← 返回版本列表</a><h1>${escapeHtml(page.owner)}/${escapeHtml(page.repo)}</h1>${releaseCards || "<p class=\"release-empty\">暂时没有可用的发布版本。</p>"}</main></body>
+</html>`;
+}
+
+async function proxyGithubReleasePage(
+  page: GithubReleasePage,
+  configuredProxySourceUrl: string,
+  proxyOrigin: string,
+) {
+  const releases = await fetchGithubReleases(page);
+  return releasePageHtml(page, releases, configuredProxySourceUrl, proxyOrigin);
+}
+
 async function handleProxyRequest(request: NextRequest, method: "GET" | "HEAD") {
   const sourceUrl = extractProxySourceUrl(request.nextUrl.pathname, request.nextUrl.search);
   if (!sourceUrl) return proxyError("下载地址无效", 404);
@@ -206,6 +358,22 @@ async function handleProxyRequest(request: NextRequest, method: "GET" | "HEAD") 
   if (!configuredProxy) return proxyScopeNotFound();
 
   try {
+    const githubReleasePage = method === "GET" ? parseGithubReleasePage(sourceUrl) : null;
+    if (githubReleasePage) {
+      const html = await proxyGithubReleasePage(
+        githubReleasePage,
+        configuredProxy.sourceUrl,
+        request.nextUrl.origin,
+      );
+      return new NextResponse(html, {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+          "Content-Type": "text/html; charset=utf-8",
+          "X-Robots-Tag": "noindex, nofollow",
+        },
+      });
+    }
     const hasRange = Boolean(request.headers.get("range"));
     if (method === "GET" && !hasRange && isLikelyDownloadPath(sourceUrl)) {
       const head = await fetchUpstream(request, sourceUrl, "HEAD", null);
