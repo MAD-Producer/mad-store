@@ -111,7 +111,7 @@ describe("release proxy route", () => {
       tag_name: "v1.0",
       name: "MAD Toolbox 1.0",
       published_at: "2026-01-02T00:00:00Z",
-      body: "首个稳定版本",
+      body: "## Changes\n\n- **首个稳定版本**\n\n[Full Changelog](https://github.com/MAD-Producer/MAD-Toolbox/releases)",
       assets: [{
         name: "MAD-Toolbox.zip",
         size: 5,
@@ -129,9 +129,37 @@ describe("release proxy route", () => {
     expect(response.headers.get("content-type")).toContain("text/html");
     expect(html).toContain("MAD Toolbox 1.0");
     expect(html).toContain("国内下载");
+    expect(html).toContain("<h2>Changes</h2>");
+    expect(html).toContain("<strong>首个稳定版本</strong>");
+    expect(html).toContain("<a href=\"https://store.example/https://github.com/MAD-Producer/MAD-Toolbox/releases\"");
+    expect(html).not.toContain("← 返回版本列表");
     expect(html).toContain("https://store.example/https://github.com/MAD-Producer/MAD-Toolbox/releases/download/v1.0/MAD-Toolbox.zip");
     expect(String(fetchMock.mock.calls[0][0])).toBe(
       "https://api.github.com/repos/MAD-Producer/MAD-Toolbox/releases?per_page=30",
+    );
+  });
+
+  it("shows a working version-list link on a release detail page", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      tag_name: "v1.0",
+      name: "MAD Toolbox 1.0",
+      published_at: "2026-01-02T00:00:00Z",
+      body: "### Changes\n\n- **修复** 下载问题",
+      assets: [],
+    }), {
+      headers: { "content-type": "application/json" },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET(request("https://github.com/MAD-Producer/MAD-Toolbox/releases/tag/v1.0"));
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(html).toContain("<h3>Changes</h3>");
+    expect(html).toContain("<strong>修复</strong>");
+    expect(html).toContain("<a class=\"back\" href=\"https://store.example/https://github.com/MAD-Producer/MAD-Toolbox/releases\">← 返回版本列表</a>");
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      "https://api.github.com/repos/MAD-Producer/MAD-Toolbox/releases/tags/v1.0",
     );
   });
 
