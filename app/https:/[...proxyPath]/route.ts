@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import rehypeStringify from "rehype-stringify";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import { unified } from "unified";
 import { findPublishedProxyDownload } from "@/lib/projects";
 import {
   buildProxyDownloadUrl,
@@ -192,6 +198,96 @@ function contentLength(response: Response) {
   return Number.isSafeInteger(length) && length >= 0 ? length : null;
 }
 
+function resolveReleaseUrl(
+  value: string | undefined,
+  baseUrl: string,
+  scopeUrl: string,
+  proxyOrigin: string,
+) {
+  if (!value) return "";
+  if (value.startsWith("#")) return value;
+
+  try {
+    const resolved = new URL(value, baseUrl);
+    if (resolved.protocol !== "https:") return "";
+    const normalized = normalizeProxySourceUrl(resolved.toString());
+    return proxySourceMatchesScope(normalized, scopeUrl)
+      ? buildProxyDownloadUrl(normalized, proxyOrigin)
+      : normalized;
+  } catch {
+    return "";
+  }
+}
+
+type ReleaseMarkdownNode = {
+  children?: ReleaseMarkdownNode[];
+  properties?: Record<string, unknown>;
+  tagName?: string;
+  type?: string;
+  value?: string;
+};
+
+function isReleaseMarkdownNode(value: unknown): value is ReleaseMarkdownNode {
+  return Boolean(value && typeof value === "object");
+}
+
+function releaseMarkdownLinks(
+  baseUrl: string,
+  scopeUrl: string,
+  proxyOrigin: string,
+) {
+  return (tree: ReleaseMarkdownNode) => {
+    function visit(node: ReleaseMarkdownNode) {
+      if (node.type === "element" && node.properties) {
+        const attribute = node.tagName === "a"
+          ? "href"
+          : node.tagName === "img"
+            ? "src"
+            : "";
+        const value = attribute ? node.properties[attribute] : undefined;
+        if (attribute && typeof value === "string") {
+          const resolved = resolveReleaseUrl(value, baseUrl, scopeUrl, proxyOrigin);
+          if (resolved) {
+            node.properties[attribute] = resolved;
+            if (node.tagName === "a" && !resolved.startsWith("#")) {
+              node.properties.target = "_blank";
+              node.properties.rel = "noreferrer";
+            }
+          } else if (node.tagName === "img") {
+            node.type = "text";
+            node.value = String(node.properties.alt || "");
+            delete node.tagName;
+            delete node.properties;
+            delete node.children;
+          } else {
+            delete node.properties[attribute];
+          }
+        }
+      }
+      if (node.children) node.children.forEach(visit);
+    }
+
+    if (isReleaseMarkdownNode(tree)) visit(tree);
+  };
+}
+
+function renderReleaseMarkdown(
+  markdown: string,
+  baseUrl: string,
+  scopeUrl: string,
+  proxyOrigin: string,
+) {
+  const processor = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkRehype)
+    .use(releaseMarkdownLinks, baseUrl, scopeUrl, proxyOrigin)
+    .use(rehypeSanitize)
+    .use(rehypeStringify);
+  const tree = processor.parse(markdown);
+  return String(processor.stringify(processor.runSync(tree)));
+}
+
 type GithubReleasePage = {
   owner: string;
   repo: string;
@@ -280,6 +376,12 @@ function releasePageHtml(
     const name = stringValue(release.name) || tag || "未命名版本";
     const publishedAt = stringValue(release.published_at).slice(0, 10);
     const body = stringValue(release.body).slice(0, 6_000);
+    const releaseSourceUrl = page.tag
+      ? `https://github.com/${page.owner}/${page.repo}/releases/tag/${encodeURIComponent(page.tag)}`
+      : `https://github.com/${page.owner}/${page.repo}/releases`;
+    const bodyHtml = body
+      ? renderReleaseMarkdown(body, releaseSourceUrl, scopeUrl, proxyOrigin)
+      : "";
     const tagSourceUrl = `https://github.com/${page.owner}/${page.repo}/releases/tag/${encodeURIComponent(tag)}`;
     const tagUrl = tag
       ? buildProxyDownloadUrl(tagSourceUrl, proxyOrigin)
@@ -300,11 +402,14 @@ function releasePageHtml(
     return `<article class="release-card">
       <h2><a href="${escapeHtml(tagUrl)}">${escapeHtml(name)}</a></h2>
       <p class="release-meta">${escapeHtml(tag)}${publishedAt ? ` · ${escapeHtml(publishedAt)}` : ""}</p>
-      ${body ? `<p class="release-body">${escapeHtml(body).replaceAll("\n", "<br>")}</p>` : ""}
+      ${bodyHtml ? `<div class="release-body">${bodyHtml}</div>` : ""}
       ${assetLinks ? `<ul class="release-assets">${assetLinks}</ul>` : '<p class="release-empty">这个版本暂时没有可下载文件。</p>'}
     </article>`;
   }).join("");
   const backUrl = buildProxyDownloadUrl(`https://github.com/${page.owner}/${page.repo}/releases`, proxyOrigin);
+  const navigation = page.tag
+    ? `<a class="back" href="${escapeHtml(backUrl)}">← 返回版本列表</a>`
+    : "";
   return `<!doctype html>
 <html lang="zh-CN">
   <head>
@@ -325,13 +430,32 @@ function releasePageHtml(
       h2 a:hover, .release-assets a:hover { color: #e85f4a; }
       .release-meta { margin: 8px 0 0; color: #a3a3a3; font-size: 11px; }
       .release-body { margin: 18px 0 0; color: #737373; font-size: 12px; line-height: 1.75; white-space: normal; overflow-wrap: anywhere; }
+      .release-body > :first-child { margin-top: 0; }
+      .release-body > :last-child { margin-bottom: 0; }
+      .release-body p { margin: 0 0 12px; }
+      .release-body h1, .release-body h2, .release-body h3, .release-body h4 { margin: 20px 0 9px; color: #2b2b2b; letter-spacing: -.02em; }
+      .release-body h1 { font-size: 20px; }
+      .release-body h2 { font-size: 17px; }
+      .release-body h3 { font-size: 15px; }
+      .release-body h4 { font-size: 13px; }
+      .release-body ul, .release-body ol { margin: 0 0 14px; padding-left: 22px; }
+      .release-body li { margin: 3px 0; }
+      .release-body a { color: #e85f4a; text-decoration: underline; text-underline-offset: 2px; }
+      .release-body code { padding: 2px 4px; border-radius: 4px; background: #f1f1ef; color: #414141; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+      .release-body pre { overflow-x: auto; margin: 0 0 14px; padding: 13px 15px; border-radius: 7px; background: #202020; color: #f1f1f1; }
+      .release-body pre code { padding: 0; background: none; color: inherit; }
+      .release-body blockquote { margin: 0 0 14px; padding: 2px 0 2px 13px; border-left: 2px solid #e85f4a; color: #737373; }
+      .release-body hr { margin: 18px 0; border: 0; border-top: 1px solid #e7e7e5; }
+      .release-body table { width: 100%; margin: 0 0 14px; border-collapse: collapse; font-size: 11px; }
+      .release-body th, .release-body td { padding: 7px 9px; border: 1px solid #e7e7e5; text-align: left; }
+      .release-body img { display: block; max-width: 100%; height: auto; margin: 12px 0; border-radius: 7px; }
       .release-assets { display: grid; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; }
       .release-assets li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 12px; border-radius: 7px; background: #f4f4f2; font-size: 11px; }
       .release-assets span, .release-empty { color: #a3a3a3; font-size: 10px; }
       .release-empty { margin: 20px 0 0; }
     </style>
   </head>
-  <body><main><a class="back" href="${escapeHtml(backUrl)}">← 返回版本列表</a><h1>${escapeHtml(page.owner)}/${escapeHtml(page.repo)}</h1>${releaseCards || "<p class=\"release-empty\">暂时没有可用的发布版本。</p>"}</main></body>
+  <body><main>${navigation}<h1>${escapeHtml(page.owner)}/${escapeHtml(page.repo)}</h1>${releaseCards || "<p class=\"release-empty\">暂时没有可用的发布版本。</p>"}</main></body>
 </html>`;
 }
 
