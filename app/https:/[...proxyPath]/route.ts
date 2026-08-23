@@ -421,38 +421,49 @@ function releasePageHtml(
       :root { color-scheme: light; font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; color: #2b2b2b; background: #fafaf8; }
       * { box-sizing: border-box; }
       body { margin: 0; background: #fafaf8; }
-      main { width: min(900px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0 80px; }
-      .back { color: #737373; font-size: 12px; text-decoration: none; }
-      h1 { margin: 26px 0 28px; color: #171717; font-size: clamp(28px, 5vw, 48px); letter-spacing: -.05em; }
-      .release-card { margin-top: 16px; padding: 25px; border: 1px solid #e7e7e5; border-radius: 12px; background: #fff; }
-      h2 { margin: 0; font-size: 20px; }
+      main { width: min(1040px, calc(100% - 48px)); margin: 0 auto; padding: 54px 0 88px; }
+      .back { color: #737373; font-size: 14px; line-height: 1.5; text-decoration: none; }
+      h1 { margin: 28px 0 34px; color: #171717; font-size: clamp(32px, 5vw, 52px); line-height: 1.15; letter-spacing: -.035em; }
+      .release-card { margin-top: 20px; padding: 30px; border: 1px solid #e7e7e5; border-radius: 14px; background: #fff; }
+      h2 { margin: 0; font-size: 23px; line-height: 1.35; }
       h2 a, .release-assets a { color: #171717; text-decoration: none; }
       h2 a:hover, .release-assets a:hover { color: #e85f4a; }
-      .release-meta { margin: 8px 0 0; color: #a3a3a3; font-size: 11px; }
-      .release-body { margin: 18px 0 0; color: #737373; font-size: 12px; line-height: 1.75; white-space: normal; overflow-wrap: anywhere; }
+      .release-meta { margin: 10px 0 0; color: #8c8c8c; font-size: 13px; line-height: 1.5; }
+      .release-body { margin: 22px 0 0; color: #595959; font-size: 15px; line-height: 1.9; white-space: normal; overflow-wrap: break-word; word-break: normal; }
       .release-body > :first-child { margin-top: 0; }
       .release-body > :last-child { margin-bottom: 0; }
-      .release-body p { margin: 0 0 12px; }
-      .release-body h1, .release-body h2, .release-body h3, .release-body h4 { margin: 20px 0 9px; color: #2b2b2b; letter-spacing: -.02em; }
-      .release-body h1 { font-size: 20px; }
-      .release-body h2 { font-size: 17px; }
-      .release-body h3 { font-size: 15px; }
-      .release-body h4 { font-size: 13px; }
-      .release-body ul, .release-body ol { margin: 0 0 14px; padding-left: 22px; }
-      .release-body li { margin: 3px 0; }
+      .release-body p { margin: 0 0 15px; }
+      .release-body h1, .release-body h2, .release-body h3, .release-body h4 { margin: 24px 0 10px; color: #2b2b2b; line-height: 1.4; letter-spacing: -.02em; }
+      .release-body h1 { font-size: 24px; }
+      .release-body h2 { font-size: 21px; }
+      .release-body h3 { font-size: 18px; }
+      .release-body h4 { font-size: 16px; }
+      .release-body ul, .release-body ol { margin: 0 0 16px; padding-left: 24px; }
+      .release-body li { margin: 5px 0; }
       .release-body a { color: #e85f4a; text-decoration: underline; text-underline-offset: 2px; }
-      .release-body code { padding: 2px 4px; border-radius: 4px; background: #f1f1ef; color: #414141; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
-      .release-body pre { overflow-x: auto; margin: 0 0 14px; padding: 13px 15px; border-radius: 7px; background: #202020; color: #f1f1f1; }
+      .release-body code { padding: 2px 5px; border-radius: 4px; background: #f1f1ef; color: #414141; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+      .release-body pre { overflow-x: auto; margin: 0 0 16px; padding: 14px 16px; border-radius: 8px; background: #202020; color: #f1f1f1; }
       .release-body pre code { padding: 0; background: none; color: inherit; }
-      .release-body blockquote { margin: 0 0 14px; padding: 2px 0 2px 13px; border-left: 2px solid #e85f4a; color: #737373; }
+      .release-body blockquote { margin: 0 0 16px; padding: 3px 0 3px 15px; border-left: 3px solid #e85f4a; color: #737373; }
       .release-body hr { margin: 18px 0; border: 0; border-top: 1px solid #e7e7e5; }
-      .release-body table { width: 100%; margin: 0 0 14px; border-collapse: collapse; font-size: 11px; }
-      .release-body th, .release-body td { padding: 7px 9px; border: 1px solid #e7e7e5; text-align: left; }
-      .release-body img { display: block; max-width: 100%; height: auto; margin: 12px 0; border-radius: 7px; }
-      .release-assets { display: grid; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; }
-      .release-assets li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 12px; border-radius: 7px; background: #f4f4f2; font-size: 11px; }
-      .release-assets span, .release-empty { color: #a3a3a3; font-size: 10px; }
-      .release-empty { margin: 20px 0 0; }
+      .release-body table { width: 100%; margin: 0 0 16px; border-collapse: collapse; font-size: 13px; }
+      .release-body th, .release-body td { padding: 9px 11px; border: 1px solid #e7e7e5; text-align: left; }
+      .release-body img { display: block; max-width: 100%; height: auto; margin: 14px 0; border-radius: 8px; }
+      .release-assets { display: grid; gap: 10px; margin: 24px 0 0; padding: 0; list-style: none; }
+      .release-assets li { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 13px 15px; border-radius: 8px; background: #f4f4f2; font-size: 13px; line-height: 1.5; }
+      .release-assets li a { min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; }
+      .release-assets span { flex: 0 0 auto; white-space: nowrap; }
+      .release-assets span, .release-empty { color: #8c8c8c; font-size: 12px; }
+      .release-empty { margin: 20px 0 0; line-height: 1.6; }
+      @media (max-width: 640px) {
+        main { width: calc(100% - 24px); padding: 32px 0 56px; }
+        h1 { margin: 22px 0 24px; font-size: 34px; }
+        .release-card { padding: 22px 18px; }
+        h2 { font-size: 21px; }
+        .release-body { font-size: 14px; line-height: 1.85; }
+        .release-assets li { flex-direction: column; gap: 6px; }
+        .release-assets span { font-size: 11px; }
+      }
     </style>
   </head>
   <body><main>${navigation}<h1>${escapeHtml(page.owner)}/${escapeHtml(page.repo)}</h1>${releaseCards || "<p class=\"release-empty\">暂时没有可用的发布版本。</p>"}</main></body>
