@@ -1,3 +1,4 @@
+import { selectChineseReadme, type ReadmeCandidateForSelection } from "./ai";
 import type { SubmissionInput } from "./types";
 
 interface GitHubRepository {
@@ -11,6 +12,20 @@ interface GitHubRepository {
   archived: boolean;
   disabled: boolean;
 }
+
+interface GitHubContent {
+  type?: string;
+  name?: string;
+  path?: string;
+  content?: string;
+  encoding?: string;
+}
+
+interface ReadmeCandidate extends ReadmeCandidateForSelection {
+  path: string;
+}
+
+const README_FILE_PATTERN = /^readme(?:[._-].*)?$/i;
 
 function parseRepositoryUrl(repoUrl: string) {
   const url = new URL(repoUrl);
@@ -33,6 +48,56 @@ function githubHeaders() {
   return headers;
 }
 
+function decodeGitHubContent(data: GitHubContent) {
+  if (!data.content || data.encoding !== "base64") return "";
+  return Buffer.from(data.content.replace(/\s/g, ""), "base64").toString("utf8").slice(0, 200_000);
+}
+
+async function fetchGitHubJson<T>(url: string, revalidate: number) {
+  const response = await fetch(url, {
+    headers: githubHeaders(),
+    next: { revalidate },
+  });
+  if (!response.ok) return null;
+  return (await response.json()) as T;
+}
+
+function githubContentUrl(owner: string, repo: string, path: string) {
+  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+  return `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}`;
+}
+
+function chineseCharacterCount(value: string) {
+  return (value.match(/[\u3400-\u9fff]/g) || []).length;
+}
+
+function chineseReadmeScore(candidate: Pick<ReadmeCandidate, "name" | "content">) {
+  const chinese = chineseCharacterCount(candidate.content);
+  const latin = (candidate.content.match(/[A-Za-z]/g) || []).length;
+  const ratio = chinese / Math.max(chinese + latin, 1);
+  const filenameHint = /(?:zh|cn|chinese|中文|简体|繁體)/i.test(candidate.name) ? 0.25 : 0;
+  return ratio + filenameHint;
+}
+
+function isChineseReadme(candidate: Pick<ReadmeCandidate, "name" | "content">) {
+  const chinese = chineseCharacterCount(candidate.content);
+  const latin = (candidate.content.match(/[A-Za-z]/g) || []).length;
+  return chinese >= 4 && (chinese / Math.max(chinese + latin, 1) >= 0.03 || /(?:zh|cn|chinese|中文|简体|繁體)/i.test(candidate.name));
+}
+
+async function selectReadme(candidates: ReadmeCandidate[], fallbackPath?: string) {
+  if (!candidates.length) return "";
+  const fallback = candidates.find((candidate) => candidate.path === fallbackPath) || candidates[0];
+  const aiSelectedId = await selectChineseReadme(candidates.map(({ id, name, content }) => ({ id, name, content })));
+  const aiSelected = aiSelectedId ? candidates.find((candidate) => candidate.id === aiSelectedId) : undefined;
+  if (aiSelected && isChineseReadme(aiSelected)) return aiSelected.content;
+
+  const likelyChinese = candidates
+    .filter(isChineseReadme)
+    .sort((left, right) => chineseReadmeScore(right) - chineseReadmeScore(left))[0];
+  return likelyChinese?.content || fallback.content;
+}
+
 export async function fetchRepository(repoUrl: string) {
   const { owner, repo } = parseRepositoryUrl(repoUrl);
   const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
@@ -47,14 +112,38 @@ export async function fetchRepository(repoUrl: string) {
 
 export async function fetchReadme(repoUrl: string) {
   const { owner, repo } = parseRepositoryUrl(repoUrl);
-  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
-    headers: githubHeaders(),
-    next: { revalidate: 3600 },
-  });
-  if (!response.ok) return "";
-  const data = (await response.json()) as { content?: string; encoding?: string };
-  if (!data.content || data.encoding !== "base64") return "";
-  return Buffer.from(data.content.replace(/\n/g, ""), "base64").toString("utf8").slice(0, 200_000);
+  const defaultReadme = await fetchGitHubJson<GitHubContent>(
+    `https://api.github.com/repos/${owner}/${repo}/readme`,
+    3600,
+  );
+  const rootContents = await fetchGitHubJson<GitHubContent[]>(
+    `https://api.github.com/repos/${owner}/${repo}/contents/`,
+    3600,
+  );
+  const readmeEntries = (rootContents || []).filter(
+    (entry) => entry.type === "file" && entry.name && entry.path && README_FILE_PATTERN.test(entry.name),
+  );
+  const paths = Array.from(
+    new Set([defaultReadme?.path, ...readmeEntries.map((entry) => entry.path)]),
+  ).filter((path): path is string => Boolean(path)).slice(0, 8);
+  const candidates = (
+    await Promise.all(
+      paths.map(async (path) => {
+        const data = path === defaultReadme?.path
+          ? defaultReadme
+          : await fetchGitHubJson<GitHubContent>(githubContentUrl(owner, repo, path), 3600);
+        const content = data ? decodeGitHubContent(data) : "";
+        if (!content) return null;
+        return {
+          id: path,
+          name: data?.name || path.split("/").pop() || path,
+          path,
+          content,
+        } satisfies ReadmeCandidate;
+      }),
+    )
+  ).filter((candidate): candidate is ReadmeCandidate => Boolean(candidate));
+  return selectReadme(candidates, defaultReadme?.path);
 }
 
 export async function enrichSubmission(input: SubmissionInput) {
