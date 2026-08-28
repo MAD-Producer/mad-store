@@ -75,7 +75,9 @@ describe("GET /api/updates/mad-toolbox", () => {
     );
     expect(body.selectedAsset).toMatchObject({
       name: "MAD.Toolbox_1.0.1_aarch64-Full.dmg",
-      url: "https://store.example/https://github.com/MAD-Producer/MAD-Toolbox/releases/download/v1.0.1/MAD.Toolbox_1.0.1_aarch64-Full.dmg",
+      downloadUrl:
+        "https://store.example/api/download-proxy?target=https%3A%2F%2Fgithub.com%2FMAD-Producer%2FMAD-Toolbox%2Freleases%2Fdownload%2Fv1.0.1%2FMAD.Toolbox_1.0.1_aarch64-Full.dmg",
+      browserUrl: expect.stringContaining("https://store.example/download-proxy?target="),
       platform: "macos",
       arch: "arm64",
       edition: "full"

@@ -4,8 +4,7 @@ export const MAD_TOOLBOX_REPOSITORY = "MAD-Producer/MAD-Toolbox";
 
 const GITHUB_LATEST_RELEASE_URL =
   "https://api.github.com/repos/MAD-Producer/MAD-Toolbox/releases/latest";
-const RELEASE_ASSET_PREFIX =
-  "https://github.com/MAD-Producer/MAD-Toolbox/releases/download/";
+const RELEASE_ASSET_PATH_PREFIX = "/MAD-Producer/MAD-Toolbox/releases/download/";
 
 export type MadToolboxPlatform = "windows" | "macos";
 export type MadToolboxArch = "x86_64" | "arm64";
@@ -20,7 +19,8 @@ export interface MadToolboxSelection {
 export interface MadToolboxAsset {
   name: string;
   size: number | null;
-  url: string;
+  downloadUrl: string;
+  browserUrl: string;
   kind: "installer" | "checksum" | "other";
   platform: MadToolboxPlatform | null;
   arch: MadToolboxArch | null;
@@ -88,6 +88,18 @@ function classifyAsset(name: string): Pick<
   return { kind, platform, arch, edition };
 }
 
+function buildDownloadApiUrl(sourceUrl: string, siteUrl: string) {
+  const apiUrl = new URL("/api/download-proxy", siteUrl);
+  apiUrl.searchParams.set("target", sourceUrl);
+  return apiUrl.toString();
+}
+
+function buildDownloadPageUrl(sourceUrl: string, siteUrl: string) {
+  const pageUrl = new URL("/download-proxy", siteUrl);
+  pageUrl.searchParams.set("target", buildProxyDownloadUrl(sourceUrl, siteUrl));
+  return pageUrl.toString();
+}
+
 function normalizeAsset(value: unknown, siteUrl: string): MadToolboxAsset | null {
   const record = asRecord(value);
   const name = asString(record?.name);
@@ -103,7 +115,7 @@ function normalizeAsset(value: unknown, siteUrl: string): MadToolboxAsset | null
   if (
     parsedUrl.protocol !== "https:" ||
     parsedUrl.hostname !== "github.com" ||
-    !parsedUrl.pathname.startsWith(RELEASE_ASSET_PREFIX.slice("https://github.com".length))
+    !parsedUrl.pathname.startsWith(RELEASE_ASSET_PATH_PREFIX)
   ) {
     return null;
   }
@@ -112,11 +124,13 @@ function normalizeAsset(value: unknown, siteUrl: string): MadToolboxAsset | null
     typeof record?.size === "number" && Number.isSafeInteger(record.size) && record.size >= 0
       ? record.size
       : null;
+  const normalizedSourceUrl = parsedUrl.toString();
 
   return {
     name,
     size,
-    url: buildProxyDownloadUrl(parsedUrl.toString(), siteUrl),
+    downloadUrl: buildDownloadApiUrl(normalizedSourceUrl, siteUrl),
+    browserUrl: buildDownloadPageUrl(normalizedSourceUrl, siteUrl),
     ...classifyAsset(name)
   };
 }
