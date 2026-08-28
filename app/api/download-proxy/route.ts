@@ -54,7 +54,7 @@ function parseRangeHeader(value: string | null) {
   ) {
     return null;
   }
-  return \`bytes=\${start}-\${requestedEnd}\`;
+  return `bytes=${start}-${requestedEnd}`;
 }
 
 function responseHeaders(response: Response) {
@@ -173,7 +173,7 @@ export async function GET(request: NextRequest) {
   const range = parseRangeHeader(request.headers.get("range"));
   if (!range) {
     return proxyError(
-      \`GET 请求必须包含单个不超过 \${PROXY_DOWNLOAD_CHUNK_SIZE} 字节的 Range\`,
+      `GET 请求必须包含单个不超过 ${PROXY_DOWNLOAD_CHUNK_SIZE} 字节的 Range`,
       416,
     );
   }
